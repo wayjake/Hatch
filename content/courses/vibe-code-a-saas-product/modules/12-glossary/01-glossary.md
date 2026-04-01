@@ -14,6 +14,8 @@ A reference guide to the terms used throughout this course. Bookmark this page �
 
 **Action** — In React Router, a server-side function that handles form submissions and data mutations. Actions run on the server, not in the browser.
 
+**Auto Scaling Groups** — *Coming soon.*
+
 **API (Application Programming Interface)** — A way for two pieces of software to talk to each other. When your app sends data to Stripe or fetches data from a database, it's using an API.
 
 **API Key** — A secret value that identifies and authenticates your application with an external service. Treat API keys like passwords.
@@ -53,7 +55,7 @@ cd {folder name or path}     # change directory is a huge one
 
 **Cloudflare** — A service that manages DNS, provides CDN caching, and adds security to your domain.
 
-**Commit** — A snapshot of your code at a specific point in time, saved in git with a descriptive message. Like a save point in a video game.
+**Commit** — The incremental portion of a branch. You make some changes in your code and then when you're ready to lock in those changes you commit them. We will usually do this from the command line or with Claude Code. Usually commits have a short summary on the first line and then additional lines can be added for more context.
 
 **CORS (Cross-Origin Resource Sharing)** — A security mechanism that controls which websites can make requests to your server. If your frontend and API are on different domains, you'll encounter CORS.
 
@@ -91,13 +93,15 @@ cd {folder name or path}     # change directory is a huge one
 
 **Frontend** — The part of your application that users see and interact with in their browser. HTML, CSS, and JavaScript that renders the UI.
 
+**Frontend Frameworks** — Primarily Javascript based. They take the complexity of developing in raw javascript and html and wrap it into something higher level. Angular, React, and so many more.
+
 ---
 
 ## G
 
 **Git** — A version control system that tracks changes to your code over time. Every change is saved as a commit, and you can always go back to a previous version.
 
-**GitHub** — A website that hosts git repositories online. Your code's home in the cloud.
+**GitHub** — Git is a style of tracking code changes efficiently over time. GitHub is an online place to host the code. It allows us to deliver the code to the cloud with great observability.
 
 ---
 
@@ -139,6 +143,8 @@ cd {folder name or path}     # change directory is a huge one
 
 **Main Branch** — The primary branch in git (usually called `main`). This is the "real" version of your code that gets deployed to production.
 
+**Merge** — When we are ready to put a new branch into our main branch, we merge the code. Usually we utilize a technique which takes all of the commits from the change and then puts them into a single commit. This lets our code history be readable over time.
+
 **Migration** — A scripted change to your database structure (adding tables, columns, etc.). Drizzle generates migrations from your schema changes.
 
 **MVP (Minimum Viable Product)** — The smallest version of your product that delivers value. Just enough to test your idea with real users.
@@ -171,11 +177,17 @@ cd {folder name or path}     # change directory is a huge one
 
 **Production** — The live environment where real users interact with your application. See also: *Development*, *Staging*.
 
+**Programming Languages** — Java, Javascript, C, C++, Perl, PHP, Python, Ruby. These are the top more utilized languages since the 90's. Each has tradeoffs. Javascript has the lowest learning curve and can be utilized for pretty much anything. Other languages include C# (Microsoft), Objective C (Apple), Rust (primarily used by uber nerds and/or uber scale requirements), Zig, Odin, and many more.
+
 **Prompt Injection** — A security vulnerability where user input manipulates AI model behavior by injecting instructions into the prompt.
 
 **Public Key** — A value that can safely be exposed in browser code. Identifies your app but doesn't grant access on its own.
 
-**Push** — Sending your local git commits to a remote repository (GitHub). Makes your code available in the cloud and triggers deployments.
+**Pull** — Take the possibly old code (let's say someone else pushed code to the branch you're on and you want to grab those updates) and pull those into your working environment.
+
+**Pull Request** — Inside GitHub, it's a place to show changes in code between two different branches.
+
+**Push** — Take code that you've "committed" to the current branch and push it to the cloud (GitHub).
 
 ---
 
@@ -225,15 +237,17 @@ cd {folder name or path}     # change directory is a huge one
 
 ## U
 
-**User Story** — A feature description written from the user's perspective: "As a [user type], I want to [do something], so that [I get some benefit]."
+**User Story** — A first principle outline of a function of your application. It should usually only contain one user action. They formally look like this: "as a user, I can upload my profile image". In this example you can see it doesn't matter where they do it or even if it can be done in more than one place. You may have sub-roles like "as an admin user, I can delete a template" or "as a basic user, I don't see the delete template button". We will have a simplified version of this where you can write out what the story is and then tag which type of user this will apply to.
 
 ---
 
 ## V
 
-**Vercel** — A hosting platform that deploys your application from GitHub. Push code, get a live URL.
+**Vercel** — *Coming soon.*
 
 **Version Control** — A system for tracking changes to code over time. Git is the most widely used version control system.
+
+**VPS (Virtual Private Server)** — *Coming soon.*
 
 **Vibe Coding** — Building software by describing what you want in natural language and using AI to generate the code, while you review, steer, and verify.
 

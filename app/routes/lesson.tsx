@@ -278,6 +278,21 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
         </div>
 
         <div className="max-w-3xl mx-auto px-6 pt-10">
+          {/* Video */}
+          {lesson.video && (
+            <div className="mb-10 rounded-2xl overflow-hidden bg-black">
+              <video
+                controls
+                playsInline
+                className="w-full"
+                preload="metadata"
+              >
+                <source src={lesson.video.url} type={lesson.video.type} />
+                Your browser does not support video playback.
+              </video>
+            </div>
+          )}
+
           {/* Content */}
           <article
             className="prose prose-gray prose-headings:tracking-tight prose-a:text-brand-coral prose-code:text-brand-violet prose-code:bg-brand-violet-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none max-w-none"

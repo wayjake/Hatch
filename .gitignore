@@ -2,6 +2,11 @@
 .env
 /node_modules/
 
+# Large media files (hosted remotely, referenced via videos.json)
+*.mov
+*.mp4
+*.webm
+
 # React Router
 /.react-router/
 /build/

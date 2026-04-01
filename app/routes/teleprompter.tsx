@@ -31,16 +31,22 @@ export default function Teleprompter({ loaderData }: Route.ComponentProps) {
     loaderData;
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(2);
-  const [fontSize, setFontSize] = useState(32);
+  const [speed, setSpeed] = useState(1);
+  const [fontSize, setFontSize] = useState(40);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMirrored, setIsMirrored] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number | null>(null);
+  const accumulatorRef = useRef(0);
 
   const scroll = useCallback(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop += speed * 0.5;
+      accumulatorRef.current += speed * 0.5;
+      if (accumulatorRef.current >= 1) {
+        const px = Math.floor(accumulatorRef.current);
+        scrollRef.current.scrollTop += px;
+        accumulatorRef.current -= px;
+      }
     }
     animRef.current = requestAnimationFrame(scroll);
   }, [speed]);
@@ -64,11 +70,17 @@ export default function Teleprompter({ loaderData }: Route.ComponentProps) {
       }
       if (e.code === "ArrowUp") {
         e.preventDefault();
-        setSpeed((s) => Math.min(s + 0.5, 10));
+        setSpeed((s) => {
+          const step = s < 1 ? 0.1 : 0.5;
+          return Math.min(Math.round((s + step) * 10) / 10, 10);
+        });
       }
       if (e.code === "ArrowDown") {
         e.preventDefault();
-        setSpeed((s) => Math.max(s - 0.5, 0.5));
+        setSpeed((s) => {
+          const step = s <= 1 ? 0.1 : 0.5;
+          return Math.max(Math.round((s - step) * 10) / 10, 0.1);
+        });
       }
     }
     window.addEventListener("keydown", handleKey);
@@ -128,7 +140,10 @@ export default function Teleprompter({ loaderData }: Route.ComponentProps) {
           </button>
           <div className="w-px h-4 bg-gray-700" />
           <button
-            onClick={() => setSpeed((s) => Math.max(s - 0.5, 0.5))}
+            onClick={() => setSpeed((s) => {
+              const step = s <= 1 ? 0.1 : 0.5;
+              return Math.max(Math.round((s - step) * 10) / 10, 0.1);
+            })}
             className="px-2 py-1 text-xs bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
           >
             Slower
@@ -137,7 +152,10 @@ export default function Teleprompter({ loaderData }: Route.ComponentProps) {
             {speed}x
           </span>
           <button
-            onClick={() => setSpeed((s) => Math.min(s + 0.5, 10))}
+            onClick={() => setSpeed((s) => {
+              const step = s < 1 ? 0.1 : 0.5;
+              return Math.min(Math.round((s + step) * 10) / 10, 10);
+            })}
             className="px-2 py-1 text-xs bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
           >
             Faster

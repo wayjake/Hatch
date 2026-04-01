@@ -29,11 +29,17 @@ export interface Course {
   modules: Module[];
 }
 
+export interface LessonVideo {
+  url: string;
+  type: string;
+}
+
 export interface LessonContent {
   title: string;
   duration: string;
   html: string;
   raw: string;
+  video: LessonVideo | null;
 }
 
 export function getCourses(): Course[] {
@@ -84,10 +90,29 @@ export function getLessonContent(
 
   const html = marked(contentWithoutDuplicateH1) as string;
 
+  // Look for video reference
+  let video: LessonVideo | null = null;
+  const videosJsonPath = path.join(
+    CONTENT_DIR,
+    courseSlug,
+    "modules",
+    moduleSlug,
+    "assets",
+    "videos",
+    "videos.json"
+  );
+  if (fs.existsSync(videosJsonPath)) {
+    const videosMap = JSON.parse(fs.readFileSync(videosJsonPath, "utf-8"));
+    if (videosMap[lessonSlug]) {
+      video = videosMap[lessonSlug] as LessonVideo;
+    }
+  }
+
   return {
     title: data.title || "",
     duration: data.duration || "",
     html,
     raw: content,
+    video,
   };
 }
