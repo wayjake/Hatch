@@ -1,0 +1,28 @@
+{
+  "title": "Getting Started with Hatch",
+  "slug": "getting-started-with-hatch",
+  "description": "Learn how to use Hatch to create, publish, and sell your own online courses. From content authoring to teleprompter recording, this course covers everything you need to launch.",
+  "price": 0,
+  "currency": "USD",
+  "thumbnail": "/images/courses/getting-started.jpg",
+  "author": "Hatch Team",
+  "status": "published",
+  "modules": [
+    {
+      "title": "Introduction",
+      "slug": "01-introduction",
+      "lessons": [
+        { "title": "Welcome to Hatch", "slug": "01-welcome", "duration": "3 min" },
+        { "title": "How Courses Work", "slug": "02-how-courses-work", "duration": "5 min" }
+      ]
+    },
+    {
+      "title": "Creating Content",
+      "slug": "02-creating-content",
+      "lessons": [
+        { "title": "Writing in Markdown", "slug": "01-writing-markdown", "duration": "8 min" },
+        { "title": "Adding Media", "slug": "02-adding-media", "duration": "6 min" }
+      ]
+    }
+  ]
+}

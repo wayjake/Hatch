@@ -1,5 +1,5 @@
 {
-  "name": "course-platform",
+  "name": "hatch",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,10 @@
   "dependencies": {
     "@react-router/node": "7.13.2",
     "@react-router/serve": "7.13.2",
+    "@tailwindcss/typography": "^0.5.19",
+    "gray-matter": "^4.0.3",
     "isbot": "^5.1.36",
+    "marked": "^17.0.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router": "7.13.2"
