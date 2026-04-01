@@ -1,0 +1,130 @@
+{
+  "title": "Vibe Code a SaaS Product",
+  "slug": "vibe-code-a-saas-product",
+  "description": "From the founder of Dubsado — an 8-figure ARR SaaS built without investors — learn how to vibe code your own SaaS product from idea to launch. Real stack, real tools, real talk about what it takes to build something people pay for.",
+  "price": 49,
+  "currency": "USD",
+  "thumbnail": "/images/courses/vibe-code-saas.jpg",
+  "author": "Jake",
+  "status": "published",
+  "modules": [
+    {
+      "title": "The Starting Line",
+      "slug": "01-the-starting-line",
+      "lessons": [
+        { "title": "My Story: From Zero to Eight Figures", "slug": "01-my-story", "duration": "10 min" },
+        { "title": "What Is Vibe Coding?", "slug": "02-what-is-vibe-coding", "duration": "7 min" },
+        { "title": "Who This Course Is For", "slug": "03-who-this-is-for", "duration": "5 min" },
+        { "title": "Core Concepts: Hosting, Deploying, and Git", "slug": "04-core-concepts-hosting-deploying-git", "duration": "8 min" }
+      ]
+    },
+    {
+      "title": "Your AI Toolkit",
+      "slug": "02-your-ai-toolkit",
+      "lessons": [
+        { "title": "Claude Code & Codex Basics", "slug": "01-claude-code-and-codex", "duration": "10 min" },
+        { "title": "Our Stack and Why We're Committing to It", "slug": "02-our-stack", "duration": "12 min" },
+        { "title": "The Tool Ecosystem", "slug": "03-the-tool-ecosystem", "duration": "10 min" },
+        { "title": "Core Concepts: Commits, Repos, and Version Control", "slug": "04-core-concepts-version-control", "duration": "8 min" }
+      ]
+    },
+    {
+      "title": "Setting Up Your Environment",
+      "slug": "03-setting-up-your-environment",
+      "lessons": [
+        { "title": "Setting Up on Mac", "slug": "01-setting-up-mac", "duration": "15 min" },
+        { "title": "Setting Up on Windows", "slug": "02-setting-up-windows", "duration": "15 min" },
+        { "title": "A Note on the Rest of This Course", "slug": "03-a-note-on-the-rest", "duration": "3 min" }
+      ]
+    },
+    {
+      "title": "Build #1: Image Upload App",
+      "slug": "04-build-image-upload-app",
+      "lessons": [
+        { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
+        { "title": "Scaffolding the Project", "slug": "02-scaffolding-the-project", "duration": "10 min" },
+        { "title": "Connecting UploadThing", "slug": "03-connecting-uploadthing", "duration": "15 min" },
+        { "title": "Deploying to Vercel", "slug": "04-deploying-to-vercel", "duration": "10 min" },
+        { "title": "Core Concepts: What Is an API?", "slug": "05-core-concepts-apis", "duration": "7 min" }
+      ]
+    },
+    {
+      "title": "Build #2: AI Haiku Generator",
+      "slug": "05-build-ai-haiku-generator",
+      "lessons": [
+        { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
+        { "title": "Integrating an AI API", "slug": "02-integrating-ai-api", "duration": "12 min" },
+        { "title": "The Prompt Injection Problem", "slug": "03-prompt-injection", "duration": "10 min" },
+        { "title": "Security Basics: XSS and Input Validation", "slug": "04-security-xss-input-validation", "duration": "8 min" },
+        { "title": "Core Concepts: Dev vs Staging vs Production", "slug": "05-core-concepts-environments", "duration": "7 min" }
+      ]
+    },
+    {
+      "title": "Build #3: Form Builder",
+      "slug": "06-build-form-builder",
+      "lessons": [
+        { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
+        { "title": "Drag and Drop with React", "slug": "02-drag-and-drop", "duration": "15 min" },
+        { "title": "Setting Up Turso & Drizzle", "slug": "03-turso-and-drizzle", "duration": "12 min" },
+        { "title": "Handling Form Submissions", "slug": "04-handling-submissions", "duration": "10 min" },
+        { "title": "Why Your Data Strategy Matters", "slug": "05-data-strategy", "duration": "8 min" },
+        { "title": "Core Concepts: User Stories", "slug": "06-core-concepts-user-stories", "duration": "6 min" }
+      ]
+    },
+    {
+      "title": "Security You Can't Skip",
+      "slug": "07-security-you-cant-skip",
+      "lessons": [
+        { "title": "Authentication vs Authorization", "slug": "01-authn-vs-authz", "duration": "8 min" },
+        { "title": "Public Keys, Private Keys, and Rotation", "slug": "02-keys-and-rotation", "duration": "7 min" },
+        { "title": "What Your Users Trust You With", "slug": "03-user-trust", "duration": "6 min" }
+      ]
+    },
+    {
+      "title": "Planning Your SaaS",
+      "slug": "08-planning-your-saas",
+      "lessons": [
+        { "title": "Finding Your Problem (and Your People)", "slug": "01-finding-your-problem", "duration": "8 min" },
+        { "title": "Writing User Stories", "slug": "02-writing-user-stories", "duration": "10 min" },
+        { "title": "Creating a Moodboard", "slug": "03-creating-a-moodboard", "duration": "7 min" },
+        { "title": "Mapping User Flows and Wireframes", "slug": "04-user-flows-and-wireframes", "duration": "10 min" }
+      ]
+    },
+    {
+      "title": "Scaffolding Your SaaS",
+      "slug": "09-scaffolding-your-saas",
+      "lessons": [
+        { "title": "Base Project Setup", "slug": "01-base-project-setup", "duration": "12 min" },
+        { "title": "Authentication with Clerk", "slug": "02-auth-with-clerk", "duration": "15 min" },
+        { "title": "Skip Onboarding — Focus on Core Value", "slug": "03-skip-onboarding", "duration": "6 min" },
+        { "title": "The Marketing Site Shell", "slug": "04-marketing-site-shell", "duration": "12 min" }
+      ]
+    },
+    {
+      "title": "Integrations & The Real World",
+      "slug": "10-integrations-and-the-real-world",
+      "lessons": [
+        { "title": "Integrating Email Platforms", "slug": "01-email-platforms", "duration": "10 min" },
+        { "title": "Connecting Social Media APIs", "slug": "02-social-media-apis", "duration": "10 min" },
+        { "title": "Mapping Data Between Services", "slug": "03-mapping-data", "duration": "8 min" }
+      ]
+    },
+    {
+      "title": "Shipping & Growing",
+      "slug": "11-shipping-and-growing",
+      "lessons": [
+        { "title": "Deploying to Production", "slug": "01-deploying-to-production", "duration": "10 min" },
+        { "title": "DNS with Cloudflare", "slug": "02-dns-with-cloudflare", "duration": "8 min" },
+        { "title": "Your SaaS Goals Are Your Own", "slug": "03-your-saas-goals", "duration": "7 min" },
+        { "title": "What Comes Next", "slug": "04-what-comes-next", "duration": "5 min" }
+      ]
+    },
+    {
+      "title": "Glossary",
+      "slug": "12-glossary",
+      "lessons": [
+        { "title": "Glossary of Common Terms", "slug": "01-glossary", "duration": "reference" }
+      ]
+    }
+  ]
+}

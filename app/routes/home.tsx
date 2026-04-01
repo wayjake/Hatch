@@ -27,14 +27,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-brand-amber-50 to-brand-violet-50 text-amber-700 text-xs font-medium mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-amber to-brand-coral" />
             Now in early access
           </div>
           <h1 className="text-5xl font-bold text-gray-900 tracking-tight leading-[1.1]">
             Hatch something
             <br />
-            <span className="text-amber-500">worth sharing.</span>
+            <span className="bg-gradient-to-r from-brand-amber via-brand-coral to-brand-violet bg-clip-text text-transparent">worth sharing.</span>
           </h1>
           <p className="mt-6 text-lg text-gray-500 leading-relaxed">
             A modern platform for creating and delivering online courses.
@@ -103,7 +103,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </h2>
             <Link
               to="/courses"
-              className="text-sm font-medium text-amber-600 hover:text-amber-700"
+              className="text-sm font-medium text-brand-coral hover:text-brand-rose"
             >
               View all &rarr;
             </Link>
@@ -138,7 +138,7 @@ function Feature({
 }) {
   return (
     <div>
-      <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-amber-50 via-brand-coral-50 to-brand-violet-50 flex items-center justify-center mb-4">
         <svg
           width="20"
           height="20"
@@ -148,7 +148,7 @@ function Feature({
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-amber-600"
+          className="text-brand-coral"
         >
           {icon}
         </svg>

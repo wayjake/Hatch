@@ -12,8 +12,8 @@ export function CourseCard({ course }: { course: Course }) {
       to={`/courses/${course.slug}`}
       className="group block bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-gray-100 transition-all duration-300"
     >
-      <div className="aspect-[16/9] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-        <div className="w-16 h-16 bg-amber-400/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+      <div className="aspect-[16/9] bg-gradient-to-br from-brand-amber-50 via-brand-rose-50 to-brand-indigo-50 flex items-center justify-center">
+        <div className="w-16 h-16 bg-white/60 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 ring-1 ring-white/40">
           <svg
             width="28"
             height="28"
@@ -21,7 +21,7 @@ export function CourseCard({ course }: { course: Course }) {
             fill="none"
             stroke="currentColor"
             strokeWidth="1.5"
-            className="text-amber-600"
+            className="text-brand-violet"
           >
             <path d="M12 2L2 7l10 5 10-5-10-5z" />
             <path d="M2 17l10 5 10-5" />
@@ -30,7 +30,7 @@ export function CourseCard({ course }: { course: Course }) {
         </div>
       </div>
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-amber-600 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-brand-coral transition-colors">
           {course.title}
         </h3>
         <p className="mt-2 text-sm text-gray-500 line-clamp-2">

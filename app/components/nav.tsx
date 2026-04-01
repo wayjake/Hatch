@@ -10,7 +10,7 @@ export function Nav() {
     <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
       <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center group-hover:bg-amber-500 transition-colors">
+          <div className="w-8 h-8 bg-gradient-to-br from-brand-amber via-brand-coral to-brand-violet rounded-lg flex items-center justify-center group-hover:opacity-90 transition-opacity">
             <svg
               width="18"
               height="18"

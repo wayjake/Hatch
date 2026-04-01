@@ -4,6 +4,20 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Extended palette for wavy gradients */
+  --color-brand-amber: #f59e0b;
+  --color-brand-coral: #f97066;
+  --color-brand-rose: #fb7185;
+  --color-brand-violet: #a78bfa;
+  --color-brand-indigo: #818cf8;
+
+  /* Soft tints for backgrounds */
+  --color-brand-amber-50: #fffbeb;
+  --color-brand-coral-50: #fff1f0;
+  --color-brand-rose-50: #fff1f2;
+  --color-brand-violet-50: #f5f3ff;
+  --color-brand-indigo-50: #eef2ff;
 }
 
 html,

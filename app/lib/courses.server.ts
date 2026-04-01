@@ -73,7 +73,16 @@ export function getLessonContent(
 
   const raw = fs.readFileSync(lessonPath, "utf-8");
   const { data, content } = matter(raw);
-  const html = marked(content) as string;
+
+  // Strip leading h1 if it matches the frontmatter title
+  const title = data.title || "";
+  const h1Match = content.match(/^\s*#\s+(.+)\n/);
+  const contentWithoutDuplicateH1 =
+    h1Match && h1Match[1].trim() === title.trim()
+      ? content.replace(h1Match[0], "")
+      : content;
+
+  const html = marked(contentWithoutDuplicateH1) as string;
 
   return {
     title: data.title || "",
