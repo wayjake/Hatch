@@ -1,7 +1,10 @@
 import { Link } from "react-router";
+import { useState } from "react";
 import type { Course } from "~/lib/courses.server";
 
 export function CourseCard({ course }: { course: Course }) {
+  const [hovered, setHovered] = useState(false);
+
   const lessonCount = course.modules.reduce(
     (sum, m) => sum + m.lessons.length,
     0
@@ -10,41 +13,106 @@ export function CourseCard({ course }: { course: Course }) {
   return (
     <Link
       to={`/courses/${course.slug}`}
-      className="group block bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-gray-100 transition-all duration-300"
+      style={{ textDecoration: "none" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <div className="aspect-[16/9] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-        <div className="w-16 h-16 bg-amber-400/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="text-amber-600"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+      <div
+        style={{
+          background: hovered ? "#eef3fb" : "#ffffff",
+          border: "2px solid",
+          borderColor: hovered
+            ? "#0a246a #d4d0c8 #d4d0c8 #0a246a"
+            : "#ffffff #808080 #808080 #ffffff",
+          fontFamily: "Tahoma, Arial, sans-serif",
+          cursor: "pointer",
+          transition: "background 0.05s",
+        }}
+      >
+        {/* Icon header area — classic Windows folder look */}
+        <div
+          style={{
+            background: hovered
+              ? "linear-gradient(to bottom, #2462c8, #1a3ea0)"
+              : "linear-gradient(to bottom, #0a246a, #3a6ea5)",
+            padding: "10px 12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          {/* Classic floppy/book icon using text */}
+          <span style={{ fontSize: "28px", lineHeight: 1 }}>📖</span>
+          <div>
+            <div
+              style={{
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "12px",
+                lineHeight: "1.3",
+              }}
+            >
+              {course.title}
+            </div>
+            <div style={{ color: "#b8cfea", fontSize: "10px" }}>
+              {course.author || "Hatch Learning"}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-amber-600 transition-colors">
-          {course.title}
-        </h3>
-        <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-          {course.description}
-        </p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-gray-400">
-            {course.modules.length} modules &middot; {lessonCount} lessons
-          </span>
-          <span className="text-sm font-semibold text-gray-900">
-            {course.price === 0
-              ? "Free"
-              : `$${course.price.toFixed(2)}`}
-          </span>
+
+        {/* Body */}
+        <div style={{ padding: "8px 10px" }}>
+          <p
+            style={{
+              fontSize: "11px",
+              color: "#333",
+              margin: "0 0 8px",
+              lineHeight: "1.5",
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {course.description || "No description available."}
+          </p>
+
+          {/* Info rows */}
+          <div
+            style={{
+              background: "#d4d0c8",
+              border: "1px inset #808080",
+              borderColor: "#808080 #ffffff #ffffff #808080",
+              padding: "4px 6px",
+              fontSize: "10px",
+              color: "#333",
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "6px",
+            }}
+          >
+            <span>📁 {course.modules.length} modules</span>
+            <span>📄 {lessonCount} lessons</span>
+          </div>
+
+          {/* Price button */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              style={{
+                padding: "2px 12px",
+                background: "#d4d0c8",
+                border: "2px solid",
+                borderColor: "#ffffff #808080 #808080 #ffffff",
+                fontSize: "11px",
+                fontFamily: "Tahoma, sans-serif",
+                fontWeight: "bold",
+                color: course.price === 0 ? "#0a246a" : "#8b0000",
+                cursor: "pointer",
+              }}
+            >
+              {course.price === 0 ? "Free" : `$${course.price.toFixed(2)}`}
+            </button>
+          </div>
         </div>
       </div>
     </Link>
