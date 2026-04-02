@@ -1,4 +1,11 @@
 import { Link, useLocation } from "react-router";
+import {
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  useAuth,
+  useUser,
+} from "@clerk/react-router";
 
 export function Nav() {
   const location = useLocation();
@@ -30,21 +37,62 @@ export function Nav() {
             Hatch
           </span>
         </Link>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6">
           <Link
             to="/courses"
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
             Courses
           </Link>
-          <Link
-            to="/teleprompter"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            Teleprompter
-          </Link>
+          <AuthSection />
         </div>
       </nav>
     </header>
+  );
+}
+
+function AuthSection() {
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+
+  if (isSignedIn) {
+    const isAdmin =
+      (user?.publicMetadata?.role as string) === "admin" ||
+      (user?.unsafeMetadata?.role as string) === "admin";
+
+    return (
+      <>
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="text-sm font-medium text-brand-violet hover:text-brand-indigo transition-colors"
+          >
+            Admin
+          </Link>
+        )}
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "w-8 h-8",
+            },
+          }}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SignInButton mode="modal">
+        <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          Sign In
+        </button>
+      </SignInButton>
+      <SignUpButton mode="modal">
+        <button className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+          Sign Up
+        </button>
+      </SignUpButton>
+    </>
   );
 }

@@ -24,3 +24,12 @@ html,
 body {
   @apply bg-white text-gray-900;
 }
+
+/* Fenced code blocks — dark terminal style */
+.prose pre {
+  @apply bg-gray-900 text-gray-100 rounded-xl border border-gray-800;
+}
+
+.prose pre code {
+  @apply bg-transparent text-inherit p-0;
+}

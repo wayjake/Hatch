@@ -11,6 +11,7 @@
     {
       "title": "The Starting Line",
       "slug": "01-the-starting-line",
+      "access": "free",
       "lessons": [
         { "title": "My Story: From Zero to Eight Figures", "slug": "01-my-story", "duration": "10 min" },
         { "title": "What Is Vibe Coding?", "slug": "02-what-is-vibe-coding", "duration": "7 min" },
@@ -21,6 +22,7 @@
     {
       "title": "Your AI Toolkit",
       "slug": "02-your-ai-toolkit",
+      "access": "account",
       "lessons": [
         { "title": "Claude Code & Codex Basics", "slug": "01-claude-code-and-codex", "duration": "10 min" },
         { "title": "Our Stack and Why We're Committing to It", "slug": "02-our-stack", "duration": "12 min" },
@@ -31,6 +33,7 @@
     {
       "title": "Setting Up Your Environment",
       "slug": "03-setting-up-your-environment",
+      "access": "purchased",
       "lessons": [
         { "title": "Setting Up on Mac", "slug": "01-setting-up-mac", "duration": "15 min" },
         { "title": "Setting Up on Windows", "slug": "02-setting-up-windows", "duration": "15 min" },
@@ -40,6 +43,7 @@
     {
       "title": "Build #1: Image Upload App",
       "slug": "04-build-image-upload-app",
+      "access": "purchased",
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
         { "title": "Scaffolding the Project", "slug": "02-scaffolding-the-project", "duration": "10 min" },
@@ -51,6 +55,7 @@
     {
       "title": "Build #2: AI Haiku Generator",
       "slug": "05-build-ai-haiku-generator",
+      "access": "purchased",
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
         { "title": "Integrating an AI API", "slug": "02-integrating-ai-api", "duration": "12 min" },
@@ -62,6 +67,7 @@
     {
       "title": "Build #3: Form Builder",
       "slug": "06-build-form-builder",
+      "access": "purchased",
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
         { "title": "Drag and Drop with React", "slug": "02-drag-and-drop", "duration": "15 min" },
@@ -74,6 +80,7 @@
     {
       "title": "Security You Can't Skip",
       "slug": "07-security-you-cant-skip",
+      "access": "purchased",
       "lessons": [
         { "title": "Authentication vs Authorization", "slug": "01-authn-vs-authz", "duration": "8 min" },
         { "title": "Public Keys, Private Keys, and Rotation", "slug": "02-keys-and-rotation", "duration": "7 min" },
@@ -83,6 +90,7 @@
     {
       "title": "Planning Your SaaS",
       "slug": "08-planning-your-saas",
+      "access": "purchased",
       "lessons": [
         { "title": "Finding Your Problem (and Your People)", "slug": "01-finding-your-problem", "duration": "8 min" },
         { "title": "Writing User Stories", "slug": "02-writing-user-stories", "duration": "10 min" },
@@ -93,6 +101,7 @@
     {
       "title": "Scaffolding Your SaaS",
       "slug": "09-scaffolding-your-saas",
+      "access": "purchased",
       "lessons": [
         { "title": "Base Project Setup", "slug": "01-base-project-setup", "duration": "12 min" },
         { "title": "Authentication with Clerk", "slug": "02-auth-with-clerk", "duration": "15 min" },
@@ -103,6 +112,7 @@
     {
       "title": "Integrations & The Real World",
       "slug": "10-integrations-and-the-real-world",
+      "access": "purchased",
       "lessons": [
         { "title": "Integrating Email Platforms", "slug": "01-email-platforms", "duration": "10 min" },
         { "title": "Connecting Social Media APIs", "slug": "02-social-media-apis", "duration": "10 min" },
@@ -112,6 +122,7 @@
     {
       "title": "Shipping & Growing",
       "slug": "11-shipping-and-growing",
+      "access": "purchased",
       "lessons": [
         { "title": "Deploying to Production", "slug": "01-deploying-to-production", "duration": "10 min" },
         { "title": "DNS with Cloudflare", "slug": "02-dns-with-cloudflare", "duration": "8 min" },
@@ -122,6 +133,7 @@
     {
       "title": "Glossary",
       "slug": "12-glossary",
+      "access": "purchased",
       "lessons": [
         { "title": "Glossary of Common Terms", "slug": "01-glossary", "duration": "reference" }
       ]

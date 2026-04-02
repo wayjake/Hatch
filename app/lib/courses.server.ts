@@ -14,6 +14,7 @@ export interface Lesson {
 export interface Module {
   title: string;
   slug: string;
+  access?: "free" | "account" | "purchased";
   lessons: Lesson[];
 }
 
