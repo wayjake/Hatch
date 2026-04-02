@@ -6,10 +6,14 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { clerkMiddleware, rootAuthLoader } from "@clerk/react-router/server";
+import { ClerkProvider } from "@clerk/react-router";
 
 import type { Route } from "./+types/root";
 import { Nav } from "~/components/nav";
 import "./app.css";
+
+export const middleware: Route.MiddlewareFunction[] = [clerkMiddleware()];
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -24,6 +28,10 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export function loader(args: Route.LoaderArgs) {
+  return rootAuthLoader(args);
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -34,7 +42,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Nav />
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -43,8 +50,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
-  return <Outlet />;
+export default function App({ loaderData }: Route.ComponentProps) {
+  return (
+    <ClerkProvider loaderData={loaderData}>
+      <Nav />
+      <Outlet />
+    </ClerkProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
