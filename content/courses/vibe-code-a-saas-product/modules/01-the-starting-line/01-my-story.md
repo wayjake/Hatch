@@ -3,6 +3,7 @@ title: "My Story: From Zero to Eight Figures"
 description: "How Jake built Dubsado from scratch into an 8-figure ARR SaaS without investors — and why the MVP could have been vibe coded in an hour."
 duration: 10 min
 type: listen-along
+---
 
 # My Story: From Zero to Eight Figures
 

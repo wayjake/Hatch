@@ -3,6 +3,7 @@ title: What Is Vibe Coding?
 description: "Vibe coding is building software by describing what you want in plain English and letting AI write the code. Learn why it matters and how it works in practice."
 duration: 7 min
 type: listen-along
+---
 
 # What Is Vibe Coding?
 
