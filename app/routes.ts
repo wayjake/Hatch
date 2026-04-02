@@ -9,11 +9,13 @@ export default [
 
   // API routes
   route("api/enroll", "routes/api.enroll.ts"),
+  route("api/uploadthing", "routes/api.uploadthing.ts"),
 
   // Admin routes
   layout("routes/admin.tsx", [
     route("admin", "routes/admin.dashboard.tsx"),
     route("admin/users", "routes/admin.users.tsx"),
     route("admin/courses", "routes/admin.courses.tsx"),
+    route("admin/courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/admin.lesson.tsx"),
   ]),
 ] satisfies RouteConfig;

@@ -18,13 +18,15 @@
     "@react-router/node": "7.13.2",
     "@react-router/serve": "7.13.2",
     "@tailwindcss/typography": "^0.5.19",
+    "@uploadthing/react": "^7.3.3",
     "drizzle-orm": "^0.45.2",
     "gray-matter": "^4.0.3",
     "isbot": "^5.1.36",
     "marked": "^17.0.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router": "7.13.2"
+    "react-router": "7.13.2",
+    "uploadthing": "^7.7.4"
   },
   "devDependencies": {
     "@react-router/dev": "7.13.2",

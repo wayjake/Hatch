@@ -71,20 +71,21 @@ export default function AdminCourses({ loaderData }: Route.ComponentProps) {
               </div>
             </div>
 
-            {/* Module breakdown */}
-            <div className="border-t border-gray-50 px-6 py-3 bg-gray-50/50">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {course.modules.map((mod, idx) => (
-                  <div
-                    key={mod.slug}
-                    className="text-xs text-gray-500 flex items-center gap-1.5"
-                  >
-                    <span className="text-gray-300">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <span className="truncate">{mod.title}</span>
+            {/* Module & lesson breakdown */}
+            <div className="border-t border-gray-50">
+              {course.modules.map((mod, idx) => (
+                <div key={mod.slug}>
+                  <div className="px-6 py-3 bg-gray-50/50 flex items-center justify-between border-t border-gray-50 first:border-t-0">
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="text-gray-300">
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <span className="font-medium text-gray-700">
+                        {mod.title}
+                      </span>
+                    </div>
                     <span
-                      className={`ml-auto shrink-0 px-1.5 py-0.5 rounded text-[10px] ${
+                      className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] ${
                         mod.access === "free" || !mod.access
                           ? "bg-green-50 text-green-600"
                           : mod.access === "account"
@@ -95,8 +96,26 @@ export default function AdminCourses({ loaderData }: Route.ComponentProps) {
                       {mod.access || "free"}
                     </span>
                   </div>
-                ))}
-              </div>
+                  <ul>
+                    {mod.lessons.map((lesson) => (
+                      <li
+                        key={lesson.slug}
+                        className="px-6 py-2 flex items-center justify-between border-t border-gray-50"
+                      >
+                        <span className="text-xs text-gray-500">
+                          {lesson.title}
+                        </span>
+                        <Link
+                          to={`/admin/courses/${course.slug}/${mod.slug}/${lesson.slug}`}
+                          className="text-[11px] px-2 py-0.5 text-brand-violet hover:text-brand-indigo transition-colors"
+                        >
+                          Edit
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
         ))}

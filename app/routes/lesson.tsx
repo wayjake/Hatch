@@ -536,6 +536,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
               {lesson.video && (
                 <div className="mb-10 rounded-2xl overflow-hidden bg-black">
                   <video
+                    key={lesson.video.url}
                     controls
                     playsInline
                     className="w-full"
