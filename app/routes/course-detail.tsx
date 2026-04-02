@@ -6,10 +6,23 @@ export function meta({ data }: Route.MetaArgs) {
   if (!data?.course) {
     return [{ title: "Course Not Found — Hatch" }];
   }
-  return [
+  const tags = [
     { title: `${data.course.title} — Hatch` },
     { name: "description", content: data.course.description },
+    { property: "og:title", content: `${data.course.title} — Hatch` },
+    { property: "og:description", content: data.course.description },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: `${data.course.title} — Hatch` },
+    { name: "twitter:description", content: data.course.description },
   ];
+  if (data.course.thumbnail) {
+    tags.push(
+      { property: "og:image", content: data.course.thumbnail },
+      { name: "twitter:image", content: data.course.thumbnail }
+    );
+  }
+  return tags;
 }
 
 export function loader({ params }: Route.LoaderArgs) {

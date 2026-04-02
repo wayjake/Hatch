@@ -1,8 +1,8 @@
 ---
 title: What Is Vibe Coding?
+description: "Vibe coding is building software by describing what you want in plain English and letting AI write the code. Learn why it matters and how it works in practice."
 duration: 7 min
 type: listen-along
----
 
 # What Is Vibe Coding?
 
@@ -16,7 +16,7 @@ You don't need to memorize syntax. You don't need to know every function in ever
 
 ## Why I Care About This
 
-When I was building the first version of Dubsado, I was writing every line by hand. Every button, every form, every database query. It worked, but it was slow. And honestly, 90% of what I was writing was stuff that had been written a million times before — login forms, CRUD operations, API calls.
+When I was building the first version of Dubsado, I was writing every line by hand. Every button, every form, every database query. It worked, but it was slow. And honestly, 90% of what I was writing was stuff that had been written a million times before — login forms, , API calls.
 
 Vibe coding eliminates that 90%. It handles the boilerplate, the patterns, the stuff that's been done before. That frees you up to focus on the 10% that actually matters — the thing that makes your product different.
 

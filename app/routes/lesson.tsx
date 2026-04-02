@@ -7,7 +7,28 @@ export function meta({ data }: Route.MetaArgs) {
   if (!data?.lesson) {
     return [{ title: "Lesson Not Found — Hatch" }];
   }
-  return [{ title: `${data.lesson.title} — Hatch` }];
+  const tags: ReturnType<typeof Array<Record<string, string>>> = [
+    { title: `${data.lesson.title} — Hatch` },
+    { property: "og:title", content: `${data.lesson.title} — Hatch` },
+    { property: "og:type", content: "article" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: `${data.lesson.title} — Hatch` },
+  ];
+  if (data.lesson.description) {
+    tags.push(
+      { name: "description", content: data.lesson.description },
+      { property: "og:description", content: data.lesson.description },
+      { name: "twitter:description", content: data.lesson.description }
+    );
+  }
+  const thumbnail = data.lesson.video?.thumbnail;
+  if (thumbnail) {
+    tags.push(
+      { property: "og:image", content: thumbnail },
+      { name: "twitter:image", content: thumbnail }
+    );
+  }
+  return tags;
 }
 
 export function loader({ params }: Route.LoaderArgs) {
@@ -286,6 +307,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
                 playsInline
                 className="w-full"
                 preload="metadata"
+                poster={lesson.video.thumbnail}
               >
                 <source src={lesson.video.url} type={lesson.video.type} />
                 Your browser does not support video playback.

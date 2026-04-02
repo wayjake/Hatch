@@ -32,10 +32,12 @@ export interface Course {
 export interface LessonVideo {
   url: string;
   type: string;
+  thumbnail?: string;
 }
 
 export interface LessonContent {
   title: string;
+  description: string;
   duration: string;
   html: string;
   raw: string;
@@ -110,6 +112,7 @@ export function getLessonContent(
 
   return {
     title: data.title || "",
+    description: data.description || "",
     duration: data.duration || "",
     html,
     raw: content,
