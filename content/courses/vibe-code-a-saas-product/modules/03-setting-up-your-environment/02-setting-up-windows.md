@@ -58,14 +58,14 @@ git --version
 ## Step 4: Configure Git
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
+git config --global user.name "{{user.name}}"
+git config --global user.email "{{user.email}}"
 ```
 
 ## Step 5: GitHub SSH Setup
 
 ```bash
-ssh-keygen -t ed25519 -C "you@example.com"
+ssh-keygen -t ed25519 -C "{{user.email}}"
 ```
 
 Press Enter through prompts.

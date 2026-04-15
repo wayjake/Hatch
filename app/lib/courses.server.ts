@@ -36,6 +36,12 @@ export interface LessonVideo {
   thumbnail?: string;
 }
 
+export interface LessonUser {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string;
+}
+
 export interface LessonContent {
   title: string;
   description: string;
@@ -69,7 +75,8 @@ export function getCourse(slug: string): Course | null {
 export function getLessonContent(
   courseSlug: string,
   moduleSlug: string,
-  lessonSlug: string
+  lessonSlug: string,
+  user?: LessonUser | null
 ): LessonContent | null {
   const lessonPath = path.join(
     CONTENT_DIR,
@@ -91,7 +98,15 @@ export function getLessonContent(
       ? content.replace(h1Match[0], "")
       : content;
 
-  const html = marked(contentWithoutDuplicateH1) as string;
+  // Replace user template variables (e.g. {{user.firstName}})
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const templated = contentWithoutDuplicateH1
+    .replace(/\{\{user\.firstName\}\}/g, user?.firstName || "Your Name")
+    .replace(/\{\{user\.lastName\}\}/g, user?.lastName || "")
+    .replace(/\{\{user\.name\}\}/g, fullName || "Your Name")
+    .replace(/\{\{user\.email\}\}/g, user?.email || "you@example.com");
+
+  const html = marked(templated) as string;
 
   // Look for video reference
   let video: LessonVideo | null = null;

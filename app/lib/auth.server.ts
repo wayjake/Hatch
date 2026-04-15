@@ -2,32 +2,67 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getAuth } from "@clerk/react-router/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "~/db";
-import { users, enrollments } from "~/db/schema";
+import { users, enrollments, profiles } from "~/db/schema";
 
 export async function getOrCreateUser(args: LoaderFunctionArgs) {
   const auth = await getAuth(args);
   if (!auth.userId) return null;
 
-  const existing = await db.query.users.findFirst({
-    where: eq(users.id, auth.userId),
-  });
-
-  if (existing) return existing;
-
-  // First visit — create user record
-  // Clerk's session claims include email
   const email =
     (auth.sessionClaims?.email as string) ||
     (auth.sessionClaims?.email_address as string) ||
     "";
+  const firstName = (auth.sessionClaims?.first_name as string) || "";
+  const lastName = (auth.sessionClaims?.last_name as string) || "";
 
+  const existing = await db.query.users.findFirst({
+    where: eq(users.id, auth.userId),
+  });
+
+  if (existing) {
+    // Sync name from Clerk if it changed (e.g. OAuth profile update)
+    if (
+      (firstName && existing.firstName !== firstName) ||
+      (lastName && existing.lastName !== lastName) ||
+      (email && existing.email !== email)
+    ) {
+      await db
+        .update(users)
+        .set({
+          ...(firstName && { firstName }),
+          ...(lastName && { lastName }),
+          ...(email && { email }),
+        })
+        .where(eq(users.id, auth.userId));
+      return { ...existing, firstName: firstName || existing.firstName, lastName: lastName || existing.lastName, email: email || existing.email };
+    }
+    return existing;
+  }
+
+  // First visit — create user record
   const [newUser] = await db
     .insert(users)
-    .values({ id: auth.userId, email })
+    .values({ id: auth.userId, email, firstName, lastName })
     .onConflictDoNothing()
     .returning();
 
-  return newUser || (await db.query.users.findFirst({ where: eq(users.id, auth.userId) }));
+  const user = newUser || (await db.query.users.findFirst({ where: eq(users.id, auth.userId) }));
+
+  // Seed profile from Clerk data
+  if (user) {
+    const displayName = [firstName, lastName].filter(Boolean).join(" ");
+    const imageUrl = (auth.sessionClaims?.image_url as string) || "";
+    await db
+      .insert(profiles)
+      .values({
+        userId: user.id,
+        displayName,
+        avatarUrl: imageUrl || null,
+      })
+      .onConflictDoNothing();
+  }
+
+  return user;
 }
 
 export async function checkModuleAccess(

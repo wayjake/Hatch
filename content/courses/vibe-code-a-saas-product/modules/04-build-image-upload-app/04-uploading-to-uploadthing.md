@@ -1,12 +1,16 @@
 ---
-title: Connecting UploadThing
+title: Uploading to UploadThing
 duration: 15 min
 type: hands-on
 ---
 
-# Connecting UploadThing
+# Uploading to UploadThing
 
-Now we're going to connect our app to a real external service. This is your first taste of working with an **API** — a concept we'll define formally at the end of this module.
+In the last lesson, we saved files to our own machine. That works for development, but it raises an important question: **where do these files actually live?**
+
+Right now, your uploaded images exist in a folder on your laptop. If your computer dies, they're gone. If you deploy this app to a server, users can't access files on your local disk. And if two servers are running your app, they each have their own separate file system.
+
+This is why cloud storage exists. Services like UploadThing store your files on distributed servers — they're safe, fast, and accessible from anywhere. Let's swap out our local upload for UploadThing. This is also your first taste of working with an **API** — a concept we'll define formally at the end of this module.
 
 ## Create an UploadThing Account
 
@@ -27,7 +31,7 @@ UPLOADTHING_TOKEN=your_token_here
 .env
 ```
 
-This is your first encounter with **private keys** — secrets that authenticate your app with external services. We'll talk a lot more about key management in the security module.
+This is your first encounter with **private keys** — secrets that authenticate your app with external services. We'll talk more about key management when we deploy.
 
 ## Install the Package
 
@@ -68,10 +72,7 @@ If something doesn't work, paste the error message into Claude Code. "I'm gettin
 ```bash
 git add .
 git commit -m "Add image upload with UploadThing integration"
-git push
 ```
-
-Notice we're pushing after every major milestone. Your code is safe on GitHub.
 
 ## What Just Happened
 

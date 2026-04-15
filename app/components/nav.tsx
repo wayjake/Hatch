@@ -44,6 +44,12 @@ export function Nav() {
           >
             Courses
           </Link>
+          <Link
+            to="/community"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Community
+          </Link>
           <AuthSection />
         </div>
       </nav>
@@ -70,6 +76,12 @@ function AuthSection() {
             Admin
           </Link>
         )}
+        <Link
+          to="/profile/edit"
+          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          Profile
+        </Link>
         <UserButton
           appearance={{
             elements: {

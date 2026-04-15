@@ -6,7 +6,7 @@ type: listen-along
 
 # Core Concepts: Dev vs Staging vs Production
 
-We've now deployed two projects. Each time, your app existed in two places: your laptop and Vercel. Let's formalize this, because understanding environments is crucial for running a real SaaS.
+We just moved our database from a local file to a cloud service. Our app now exists in two places: your laptop (development) and Turso's servers (where the data lives). This pattern — local for development, cloud for production — is fundamental. Let's formalize it.
 
 ## Development (Dev)
 
@@ -66,4 +66,4 @@ The healthy workflow:
 
 This flow protects your users. Code goes through two checkpoints (your review and the preview deployment) before it reaches production.
 
-We'll refer back to these environment concepts when we set up databases, authentication, and payment processing. Each one requires careful environment configuration. For now, the key takeaway: **dev is for you, staging is for testing, production is for your users.**
+We'll refer back to these environment concepts when we set up authentication, deployment, and payment processing. Each one requires careful environment configuration. For now, the key takeaway: **dev is for you, staging is for testing, production is for your users.**

@@ -1,12 +1,12 @@
 ---
-title: Deploying to Production
+title: Pushing to Production
 duration: 10 min
 type: hands-on
 ---
 
-# Deploying to Production
+# Pushing to Production
 
-You've been deploying throughout this course — every tutorial project went live on Vercel. But deploying your actual SaaS product feels different. Let's make sure you do it right.
+You deployed your practice app to Vercel earlier in the course. Now it's time to deploy your actual SaaS product — the one you planned, scaffolded, and built. The stakes feel different because they are different. Let's make sure you do it right.
 
 ## The Pre-Deploy Checklist
 

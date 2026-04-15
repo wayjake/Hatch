@@ -24,25 +24,40 @@ That's it. Nothing fancy. And that's the point.
 This little app teaches you foundational skills that every SaaS product needs:
 
 - **Scaffolding a project** from scratch using React Router v7
-- **Connecting to an external service** (UploadThing for file storage)
+- **Uploading files locally** and understanding where they live on your machine
+- **Connecting to an external service** (UploadThing for cloud file storage)
 - **Handling user interactions** (drag, click, confirm delete)
-- **Deploying** to Vercel so it's live on the internet
-- Making your first **commits** and **pushing** to GitHub
+- Making your first **commits** and working with **branches** in Git
 
 These are the same skills you'll use whether you're building a project management tool, a client portal, or the next Dubsado. The scale changes, the fundamentals don't.
 
-## Why UploadThing?
+## Your First Git Commit
 
-Every SaaS product eventually needs file uploads — profile photos, documents, attachments. UploadThing handles the hard parts (storage, CDN, security) so you can focus on the experience.
+Before we write any code, let's set up version control. If you haven't already, create a GitHub account at [github.com](https://github.com).
 
-It has a generous free tier and excellent React integration. The AI knows it well, which means our vibe coding session will be smooth.
+Once your project is scaffolded in the next lesson, we'll initialize Git and make our first commit:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit: scaffolded project"
+```
+
+From here on out, each build section gets its own **branch**. A branch is like a parallel copy of your code where you can make changes without affecting the main version. When you're done with a section, you merge your branch back into `main`.
+
+```bash
+git checkout -b build/image-upload
+```
+
+This creates a new branch called `build/image-upload`. All the work we do in this module happens on this branch. When we're done, we'll merge it back to `main` before starting the next build.
+
+This mirrors how real teams work — and it means if something goes wrong, your `main` branch is always in a clean, working state.
 
 ## What You'll Need
 
 - Your development environment set up (from the previous module)
-- An UploadThing account (free — we'll create one together)
 - A GitHub account
-- A Vercel account (free — we'll connect it during deployment)
+- An UploadThing account (free — we'll create one together)
 
 If you don't have the accounts yet, that's fine. We'll walk through creating them as we go.
 

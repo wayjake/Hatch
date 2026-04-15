@@ -1,12 +1,12 @@
 ---
-title: DNS with Cloudflare
+title: Domains and Cloudflare
 duration: 8 min
 type: hands-on
 ---
 
-# DNS with Cloudflare
+# Domains and Cloudflare
 
-Your app is live at `your-project.vercel.app`. Let's give it a real domain.
+Your app is live at `your-project.vercel.app`. Let's give it a real domain — this is what turns a side project into a product.
 
 ## Buy a Domain
 

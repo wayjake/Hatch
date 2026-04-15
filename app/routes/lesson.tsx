@@ -4,8 +4,8 @@ import type { Route } from "./+types/lesson";
 import { getCourse, getLessonContent } from "~/lib/courses.server";
 import { checkModuleAccess, getOrCreateUser } from "~/lib/auth.server";
 import { db } from "~/db";
-import { lessonCompletions } from "~/db/schema";
-import { eq, and } from "drizzle-orm";
+import { lessonCompletions, comments, commentVotes, profiles } from "~/db/schema";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/react-router/server";
 import { SignUpButton } from "@clerk/react-router";
 
@@ -101,13 +101,36 @@ export async function loader(args: Route.LoaderArgs) {
       currentLessonIndex: currentIdx,
       gated: access.reason as "auth" | "purchase",
       completedLessons: [] as string[],
+      questions: [] as {
+        id: number;
+        content: string;
+        createdAt: Date;
+        userId: string;
+        displayName: string;
+        avatarUrl: string | null;
+        voteCount: number;
+        userVoted: boolean;
+        replies: {
+          id: number;
+          content: string;
+          createdAt: Date;
+          userId: string;
+          displayName: string;
+          avatarUrl: string | null;
+          voteCount: number;
+          userVoted: boolean;
+        }[];
+      }[],
+      currentUserId: null as string | null,
     };
   }
 
+  const currentUser = await getOrCreateUser(args);
   const lesson = getLessonContent(
     params.courseSlug,
     params.moduleSlug,
-    params.lessonSlug
+    params.lessonSlug,
+    currentUser
   );
   if (!lesson) throw new Response("Lesson not found", { status: 404 });
 
@@ -118,7 +141,6 @@ export async function loader(args: Route.LoaderArgs) {
   // Load completion data if signed in
   let completedLessons: string[] = [];
   if (access.userId) {
-    await getOrCreateUser(args);
     const completions = await db.query.lessonCompletions.findMany({
       where: and(
         eq(lessonCompletions.userId, access.userId),
@@ -129,6 +151,64 @@ export async function loader(args: Route.LoaderArgs) {
       (c) => `${c.moduleSlug}/${c.lessonSlug}`
     );
   }
+
+  // Load Q&A for this lesson
+  const allComments = await db
+    .select({
+      id: comments.id,
+      parentId: comments.parentId,
+      content: comments.content,
+      createdAt: comments.createdAt,
+      userId: comments.userId,
+      displayName: profiles.displayName,
+      avatarUrl: profiles.avatarUrl,
+      voteCount: sql<number>`(select count(*) from comment_votes where comment_id = ${comments.id})`,
+      userVoted: access.userId
+        ? sql<number>`(select count(*) from comment_votes where comment_id = ${comments.id} and user_id = ${access.userId})`
+        : sql<number>`0`,
+    })
+    .from(comments)
+    .leftJoin(profiles, eq(comments.userId, profiles.userId))
+    .where(
+      and(
+        eq(comments.courseSlug, params.courseSlug),
+        eq(comments.moduleSlug, params.moduleSlug),
+        eq(comments.lessonSlug, params.lessonSlug)
+      )
+    )
+    .orderBy(desc(comments.createdAt));
+
+  // Build threaded structure
+  const topLevel = allComments.filter((c) => !c.parentId);
+  const repliesByParent = new Map<number, typeof allComments>();
+  for (const c of allComments) {
+    if (c.parentId) {
+      const list = repliesByParent.get(c.parentId) || [];
+      list.push(c);
+      repliesByParent.set(c.parentId, list);
+    }
+  }
+
+  const questions = topLevel.map((q) => ({
+    id: q.id,
+    content: q.content,
+    createdAt: q.createdAt,
+    userId: q.userId,
+    displayName: q.displayName || "Member",
+    avatarUrl: q.avatarUrl,
+    voteCount: Number(q.voteCount),
+    userVoted: Number(q.userVoted) > 0,
+    replies: (repliesByParent.get(q.id) || []).map((r) => ({
+      id: r.id,
+      content: r.content,
+      createdAt: r.createdAt,
+      userId: r.userId,
+      displayName: r.displayName || "Member",
+      avatarUrl: r.avatarUrl,
+      voteCount: Number(r.voteCount),
+      userVoted: Number(r.userVoted) > 0,
+    })),
+  }));
 
   return {
     course: {
@@ -146,6 +226,8 @@ export async function loader(args: Route.LoaderArgs) {
     currentLessonIndex: currentIdx,
     gated: null,
     completedLessons,
+    questions,
+    currentUserId: access.userId || null,
   };
 }
 
@@ -181,6 +263,55 @@ export async function action(args: Route.ActionArgs) {
           eq(lessonCompletions.lessonSlug, params.lessonSlug)
         )
       );
+    return { ok: true };
+  }
+
+  if (intent === "post-question" || intent === "post-reply") {
+    const content = (formData.get("content") as string)?.trim();
+    if (!content) return { ok: false };
+
+    const parentId = intent === "post-reply"
+      ? Number(formData.get("parentId"))
+      : null;
+
+    await db.insert(comments).values({
+      parentId,
+      userId: auth.userId,
+      courseSlug: params.courseSlug,
+      moduleSlug: params.moduleSlug,
+      lessonSlug: params.lessonSlug,
+      content,
+    });
+    return { ok: true };
+  }
+
+  if (intent === "vote") {
+    const commentId = Number(formData.get("commentId"));
+    if (!commentId) return { ok: false };
+
+    // Toggle vote
+    const existing = await db.query.commentVotes.findFirst({
+      where: and(
+        eq(commentVotes.commentId, commentId),
+        eq(commentVotes.userId, auth.userId)
+      ),
+    });
+
+    if (existing) {
+      await db
+        .delete(commentVotes)
+        .where(
+          and(
+            eq(commentVotes.commentId, commentId),
+            eq(commentVotes.userId, auth.userId)
+          )
+        );
+    } else {
+      await db
+        .insert(commentVotes)
+        .values({ commentId, userId: auth.userId })
+        .onConflictDoNothing();
+    }
     return { ok: true };
   }
 
@@ -554,6 +685,12 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
                 dangerouslySetInnerHTML={{ __html: lesson.html }}
               />
 
+              {/* Q&A Section */}
+              <LessonQA
+                questions={loaderData.questions ?? []}
+                currentUserId={loaderData.currentUserId ?? null}
+              />
+
               <div className="mt-16 pt-8 border-t border-gray-100 flex items-center justify-between pb-12">
                 {prev ? (
                   <Link
@@ -587,6 +724,262 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
       </main>
     </div>
   );
+}
+
+function LessonQA({
+  questions,
+  currentUserId,
+}: {
+  questions: {
+    id: number;
+    content: string;
+    createdAt: Date;
+    userId: string;
+    displayName: string;
+    avatarUrl: string | null;
+    voteCount: number;
+    userVoted: boolean;
+    replies: {
+      id: number;
+      content: string;
+      createdAt: Date;
+      userId: string;
+      displayName: string;
+      avatarUrl: string | null;
+      voteCount: number;
+      userVoted: boolean;
+    }[];
+  }[];
+  currentUserId: string | null;
+}) {
+  const fetcher = useFetcher();
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+
+  return (
+    <div className="mt-16 pt-8 border-t border-gray-100">
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">
+        Questions & Discussion
+        {questions.length > 0 && (
+          <span className="ml-2 text-sm font-normal text-gray-400">
+            ({questions.length})
+          </span>
+        )}
+      </h2>
+
+      {/* Post a question */}
+      {currentUserId && (
+        <fetcher.Form method="post" className="mb-8">
+          <input type="hidden" name="intent" value="post-question" />
+          <textarea
+            name="content"
+            rows={3}
+            placeholder="Ask a question about this lesson..."
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-violet/20 focus:border-brand-violet resize-none"
+            required
+          />
+          <div className="mt-2 flex justify-end">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Post Question
+            </button>
+          </div>
+        </fetcher.Form>
+      )}
+
+      {!currentUserId && (
+        <p className="mb-8 text-sm text-gray-400">
+          Sign in to ask questions and join the discussion.
+        </p>
+      )}
+
+      {/* Questions list */}
+      <div className="space-y-6">
+        {questions.map((q) => (
+          <div key={q.id} className="group">
+            <div className="flex gap-3">
+              {/* Avatar */}
+              <Link to={`/members/${q.userId}`} className="shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gray-100 overflow-hidden">
+                  {q.avatarUrl ? (
+                    <img src={q.avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </Link>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Link
+                    to={`/members/${q.userId}`}
+                    className="text-sm font-medium text-gray-900 hover:text-brand-violet transition-colors"
+                  >
+                    {q.displayName}
+                  </Link>
+                  <span className="text-xs text-gray-400">
+                    {timeAgo(q.createdAt)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-700 whitespace-pre-line">{q.content}</p>
+
+                {/* Actions */}
+                <div className="mt-2 flex items-center gap-4">
+                  {currentUserId && (
+                    <fetcher.Form method="post" className="inline">
+                      <input type="hidden" name="intent" value="vote" />
+                      <input type="hidden" name="commentId" value={q.id} />
+                      <button
+                        type="submit"
+                        className={`flex items-center gap-1 text-xs transition-colors ${
+                          q.userVoted
+                            ? "text-brand-violet font-medium"
+                            : "text-gray-400 hover:text-gray-600"
+                        }`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={q.userVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                          <path d="M12 19V5M5 12l7-7 7 7" />
+                        </svg>
+                        {q.voteCount > 0 && q.voteCount}
+                      </button>
+                    </fetcher.Form>
+                  )}
+                  {currentUserId && (
+                    <button
+                      type="button"
+                      onClick={() => setReplyingTo(replyingTo === q.id ? null : q.id)}
+                      className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      Reply
+                    </button>
+                  )}
+                </div>
+
+                {/* Reply form */}
+                {replyingTo === q.id && (
+                  <fetcher.Form
+                    method="post"
+                    className="mt-3"
+                    onSubmit={() => setReplyingTo(null)}
+                  >
+                    <input type="hidden" name="intent" value="post-reply" />
+                    <input type="hidden" name="parentId" value={q.id} />
+                    <textarea
+                      name="content"
+                      rows={2}
+                      placeholder="Write a reply..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-violet/20 focus:border-brand-violet resize-none"
+                      required
+                      autoFocus
+                    />
+                    <div className="mt-1.5 flex items-center gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setReplyingTo(null)}
+                        className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors"
+                      >
+                        Reply
+                      </button>
+                    </div>
+                  </fetcher.Form>
+                )}
+
+                {/* Replies */}
+                {q.replies.length > 0 && (
+                  <div className="mt-4 space-y-4 pl-4 border-l-2 border-gray-100">
+                    {q.replies.map((r) => (
+                      <div key={r.id} className="flex gap-3">
+                        <Link to={`/members/${r.userId}`} className="shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-gray-100 overflow-hidden">
+                            {r.avatarUrl ? (
+                              <img src={r.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                  <circle cx="12" cy="7" r="4" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Link
+                              to={`/members/${r.userId}`}
+                              className="text-sm font-medium text-gray-900 hover:text-brand-violet transition-colors"
+                            >
+                              {r.displayName}
+                            </Link>
+                            <span className="text-xs text-gray-400">
+                              {timeAgo(r.createdAt)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-line">{r.content}</p>
+                          {currentUserId && (
+                            <fetcher.Form method="post" className="inline mt-1">
+                              <input type="hidden" name="intent" value="vote" />
+                              <input type="hidden" name="commentId" value={r.id} />
+                              <button
+                                type="submit"
+                                className={`flex items-center gap-1 text-xs mt-1 transition-colors ${
+                                  r.userVoted
+                                    ? "text-brand-violet font-medium"
+                                    : "text-gray-400 hover:text-gray-600"
+                                }`}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill={r.userVoted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                                  <path d="M12 19V5M5 12l7-7 7 7" />
+                                </svg>
+                                {r.voteCount > 0 && r.voteCount}
+                              </button>
+                            </fetcher.Form>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {questions.length === 0 && currentUserId && (
+        <p className="text-sm text-gray-400 text-center py-6">
+          No questions yet. Be the first to ask!
+        </p>
+      )}
+    </div>
+  );
+}
+
+function timeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.floor(months / 12)}y ago`;
 }
 
 function isModuleAccessible(

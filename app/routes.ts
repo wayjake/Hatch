@@ -7,6 +7,13 @@ export default [
   route("courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/lesson.tsx"),
   route("teleprompter", "routes/teleprompter.tsx"),
 
+  // Profile & community routes
+  route("profile/edit", "routes/profile.edit.tsx"),
+  route("members/:userId", "routes/member.tsx"),
+  route("community", "routes/community.tsx"),
+  route("community/projects", "routes/community.projects.tsx"),
+  route("projects/new", "routes/project.edit.tsx"),
+
   // API routes
   route("api/enroll", "routes/api.enroll.ts"),
   route("api/uploadthing", "routes/api.uploadthing.ts"),

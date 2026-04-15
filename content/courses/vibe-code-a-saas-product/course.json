@@ -47,44 +47,42 @@
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
         { "title": "Scaffolding the Project", "slug": "02-scaffolding-the-project", "duration": "10 min" },
-        { "title": "Connecting UploadThing", "slug": "03-connecting-uploadthing", "duration": "15 min" },
-        { "title": "Deploying to Vercel", "slug": "04-deploying-to-vercel", "duration": "10 min" },
+        { "title": "Uploading to Your Machine", "slug": "03-uploading-to-your-machine", "duration": "12 min" },
+        { "title": "Uploading to UploadThing", "slug": "04-uploading-to-uploadthing", "duration": "15 min" },
         { "title": "Core Concepts: What Is an API?", "slug": "05-core-concepts-apis", "duration": "7 min" }
       ]
     },
     {
-      "title": "Build #2: AI Haiku Generator",
-      "slug": "05-build-ai-haiku-generator",
+      "title": "Build #2: Adding a Database",
+      "slug": "05-build-adding-a-database",
       "access": "purchased",
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
-        { "title": "Integrating an AI API", "slug": "02-integrating-ai-api", "duration": "12 min" },
-        { "title": "The Prompt Injection Problem", "slug": "03-prompt-injection", "duration": "10 min" },
-        { "title": "Security Basics: XSS and Input Validation", "slug": "04-security-xss-input-validation", "duration": "8 min" },
-        { "title": "Core Concepts: Dev vs Staging vs Production", "slug": "05-core-concepts-environments", "duration": "7 min" }
+        { "title": "Local SQLite with Drizzle", "slug": "02-local-sqlite-with-drizzle", "duration": "15 min" },
+        { "title": "Moving to Turso", "slug": "03-moving-to-turso", "duration": "12 min" },
+        { "title": "Core Concepts: Dev vs Staging vs Production", "slug": "04-core-concepts-environments", "duration": "7 min" }
       ]
     },
     {
-      "title": "Build #3: Form Builder",
-      "slug": "06-build-form-builder",
+      "title": "Build #3: Authentication",
+      "slug": "06-build-authentication",
       "access": "purchased",
       "lessons": [
         { "title": "What We're Building", "slug": "01-what-were-building", "duration": "5 min" },
-        { "title": "Drag and Drop with React", "slug": "02-drag-and-drop", "duration": "15 min" },
-        { "title": "Setting Up Turso & Drizzle", "slug": "03-turso-and-drizzle", "duration": "12 min" },
-        { "title": "Handling Form Submissions", "slug": "04-handling-submissions", "duration": "10 min" },
-        { "title": "Why Your Data Strategy Matters", "slug": "05-data-strategy", "duration": "8 min" },
-        { "title": "Core Concepts: User Stories", "slug": "06-core-concepts-user-stories", "duration": "6 min" }
+        { "title": "Email & Password Authentication", "slug": "02-email-password-auth", "duration": "15 min" },
+        { "title": "Why Not DIY Auth?", "slug": "03-why-not-diy-auth", "duration": "10 min" },
+        { "title": "Integrating Clerk", "slug": "04-integrating-clerk", "duration": "15 min" },
+        { "title": "Core Concepts: User Stories", "slug": "05-core-concepts-user-stories", "duration": "6 min" }
       ]
     },
     {
-      "title": "Security You Can't Skip",
-      "slug": "07-security-you-cant-skip",
+      "title": "Deployment",
+      "slug": "07-deployment",
       "access": "purchased",
       "lessons": [
-        { "title": "Authentication vs Authorization", "slug": "01-authn-vs-authz", "duration": "8 min" },
-        { "title": "Public Keys, Private Keys, and Rotation", "slug": "02-keys-and-rotation", "duration": "7 min" },
-        { "title": "What Your Users Trust You With", "slug": "03-user-trust", "duration": "6 min" }
+        { "title": "Pushing to GitHub", "slug": "01-pushing-to-github", "duration": "8 min" },
+        { "title": "Deploying to Vercel", "slug": "02-deploying-to-vercel", "duration": "10 min" },
+        { "title": "Environment Variables and Keys", "slug": "03-environment-variables-and-keys", "duration": "10 min" }
       ]
     },
     {
@@ -116,7 +114,8 @@
       "lessons": [
         { "title": "Integrating Email Platforms", "slug": "01-email-platforms", "duration": "10 min" },
         { "title": "Connecting Social Media APIs", "slug": "02-social-media-apis", "duration": "10 min" },
-        { "title": "Mapping Data Between Services", "slug": "03-mapping-data", "duration": "8 min" }
+        { "title": "Mapping Data Between Services", "slug": "03-mapping-data", "duration": "8 min" },
+        { "title": "Security: XSS and Input Validation", "slug": "04-security-xss-and-input-validation", "duration": "8 min" }
       ]
     },
     {
@@ -124,10 +123,11 @@
       "slug": "11-shipping-and-growing",
       "access": "purchased",
       "lessons": [
-        { "title": "Deploying to Production", "slug": "01-deploying-to-production", "duration": "10 min" },
-        { "title": "DNS with Cloudflare", "slug": "02-dns-with-cloudflare", "duration": "8 min" },
-        { "title": "Your SaaS Goals Are Your Own", "slug": "03-your-saas-goals", "duration": "7 min" },
-        { "title": "What Comes Next", "slug": "04-what-comes-next", "duration": "5 min" }
+        { "title": "Pushing to Production", "slug": "01-deploying-to-production", "duration": "10 min" },
+        { "title": "Domains and Cloudflare", "slug": "02-dns-with-cloudflare", "duration": "8 min" },
+        { "title": "Production Secrets", "slug": "03-production-secrets", "duration": "8 min" },
+        { "title": "Your SaaS Goals Are Your Own", "slug": "04-your-saas-goals", "duration": "7 min" },
+        { "title": "What Comes Next", "slug": "05-what-comes-next", "duration": "5 min" }
       ]
     },
     {

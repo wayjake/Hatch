@@ -14,6 +14,16 @@ export const uploadRouter = {
   }).onUploadComplete(({ file }) => {
     return { url: file.ufsUrl };
   }),
+  profileAvatar: f({
+    image: { maxFileSize: "4MB", maxFileCount: 1 },
+  }).onUploadComplete(({ file }) => {
+    return { url: file.ufsUrl };
+  }),
+  projectImage: f({
+    image: { maxFileSize: "8MB", maxFileCount: 1 },
+  }).onUploadComplete(({ file }) => {
+    return { url: file.ufsUrl };
+  }),
 } satisfies FileRouter;
 
 export type UploadRouter = typeof uploadRouter;

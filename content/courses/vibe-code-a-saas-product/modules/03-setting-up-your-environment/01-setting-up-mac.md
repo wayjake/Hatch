@@ -32,18 +32,34 @@ brew --version
 
 Node.js is the runtime that makes JavaScript work outside the browser. npm (Node Package Manager) comes with it — that's how you install libraries and tools.
 
+We'll use **nvm** (Node Version Manager) to install Node. It lets you switch between Node versions easily — super helpful when different projects need different versions.
+
+Download and install nvm:
+
 ```bash
-brew install node
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+```
+
+Load nvm into your current terminal session (so you don't have to restart it):
+
+```bash
+\. "$HOME/.nvm/nvm.sh"
+```
+
+Now install Node.js:
+
+```bash
+nvm install 24
 ```
 
 Verify:
 
 ```bash
-node --version
-npm --version
+node -v
+npm -v
 ```
 
-You should see version numbers for both. If you do, you're good.
+You should see version numbers for both (something like v24.14.1 for Node and 11.11.0 for npm). If you do, you're good.
 
 ## Step 3: Install Git
 
@@ -64,8 +80,8 @@ git --version
 Tell git who you are. This labels your **commits** with your name and email:
 
 ```bash
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
+git config --global user.name "{{user.name}}"
+git config --global user.email "{{user.email}}"
 ```
 
 Use the same email you'll use for GitHub.
@@ -77,7 +93,7 @@ If you don't have one, go to [github.com](https://github.com) and sign up. Free 
 Then set up SSH authentication so you can push code without typing your password every time:
 
 ```bash
-ssh-keygen -t ed25519 -C "you@example.com"
+ssh-keygen -t ed25519 -C "{{user.email}}"
 ```
 
 Press Enter through the prompts (default location is fine, passphrase is optional).
