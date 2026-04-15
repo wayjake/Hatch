@@ -7,6 +7,10 @@ export default [
   route("courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/lesson.tsx"),
   route("teleprompter", "routes/teleprompter.tsx"),
 
+  // Creator lead pages
+  route("@/:handle", "routes/creator.$handle.tsx"),
+  route("creators", "routes/creators.tsx"),
+
   // Profile & community routes
   route("profile/edit", "routes/profile.edit.tsx"),
   route("members/:userId", "routes/member.tsx"),

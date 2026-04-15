@@ -10,8 +10,9 @@ import {
 export function Nav() {
   const location = useLocation();
   const isTeleprompter = location.pathname.startsWith("/teleprompter");
+  const isCreatorPage = location.pathname.startsWith("/@");
 
-  if (isTeleprompter) return null;
+  if (isTeleprompter || isCreatorPage) return null;
 
   return (
     <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
