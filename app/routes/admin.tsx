@@ -9,6 +9,10 @@ export async function loader(args: Route.LoaderArgs) {
 
 const navItems = [
   { to: "/admin", label: "Dashboard", end: true },
+  { to: "/admin/bookings", label: "Bookings" },
+  { to: "/admin/booking-links", label: "Booking Links" },
+  { to: "/admin/availability", label: "Availability" },
+  { to: "/admin/payments", label: "Payments" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/courses", label: "Courses" },
 ];

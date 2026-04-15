@@ -13,14 +13,24 @@ export default [
   route("community", "routes/community.tsx"),
   route("community/projects", "routes/community.projects.tsx"),
   route("projects/new", "routes/project.edit.tsx"),
+  route("account/calls", "routes/account.calls.tsx"),
+  route("account/bookings", "routes/account.bookings.tsx"),
+  route("book/:slug", "routes/book.$slug.tsx"),
 
   // API routes
   route("api/enroll", "routes/api.enroll.ts"),
   route("api/uploadthing", "routes/api.uploadthing.ts"),
+  route("api/bookings/create", "routes/api.bookings.create.ts"),
+  route("api/stripe/checkout", "routes/api.stripe.checkout.ts"),
+  route("api/stripe/webhook", "routes/api.stripe.webhook.ts"),
 
   // Admin routes
   layout("routes/admin.tsx", [
     route("admin", "routes/admin.dashboard.tsx"),
+    route("admin/bookings", "routes/admin.bookings.tsx"),
+    route("admin/booking-links", "routes/admin.booking-links.tsx"),
+    route("admin/availability", "routes/admin.availability.tsx"),
+    route("admin/payments", "routes/admin.payments.tsx"),
     route("admin/users", "routes/admin.users.tsx"),
     route("admin/courses", "routes/admin.courses.tsx"),
     route("admin/courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/admin.lesson.tsx"),
