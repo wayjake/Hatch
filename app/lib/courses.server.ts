@@ -26,6 +26,7 @@ export interface Course {
   currency: string;
   thumbnail: string;
   author: string;
+  creatorHandle?: string;
   status: string;
   modules: Module[];
 }
