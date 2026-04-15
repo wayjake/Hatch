@@ -10,6 +10,7 @@ export default [
   // Creator lead pages
   route("@/:handle", "routes/creator.$handle.tsx"),
   route("creators", "routes/creators.tsx"),
+  route("become-a-creator", "routes/become-a-creator.tsx"),
 
   // Profile & community routes
   route("profile/edit", "routes/profile.edit.tsx"),
@@ -27,6 +28,13 @@ export default [
   route("api/bookings/create", "routes/api.bookings.create.ts"),
   route("api/stripe/checkout", "routes/api.stripe.checkout.ts"),
   route("api/stripe/webhook", "routes/api.stripe.webhook.ts"),
+
+  // Studio — creator admin surface
+  layout("routes/studio.tsx", [
+    route("studio", "routes/studio.dashboard.tsx"),
+    route("studio/page", "routes/studio.page.tsx"),
+    route("studio/settings", "routes/studio.settings.tsx"),
+  ]),
 
   // Admin routes
   layout("routes/admin.tsx", [

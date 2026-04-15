@@ -1,8 +1,8 @@
-import type { LoaderFunctionArgs } from "react-router";
+import { redirect, type LoaderFunctionArgs } from "react-router";
 import { getAuth } from "@clerk/react-router/server";
 import { eq, and } from "drizzle-orm";
 import { db } from "~/db";
-import { users, enrollments, profiles } from "~/db/schema";
+import { users, enrollments, profiles, creators } from "~/db/schema";
 
 export async function getOrCreateUser(args: LoaderFunctionArgs) {
   const auth = await getAuth(args);
@@ -116,4 +116,19 @@ export async function requireAdmin(args: LoaderFunctionArgs) {
 export async function getAuthUserId(args: LoaderFunctionArgs): Promise<string | null> {
   const auth = await getAuth(args);
   return auth.userId;
+}
+
+export async function requireSignedInUser(args: LoaderFunctionArgs) {
+  const user = await getOrCreateUser(args);
+  if (!user) throw redirect("/");
+  return user;
+}
+
+export async function requireCreator(args: LoaderFunctionArgs) {
+  const user = await requireSignedInUser(args);
+  const creator = await db.query.creators.findFirst({
+    where: eq(creators.userId, user.id),
+  });
+  if (!creator) throw redirect("/become-a-creator");
+  return { user, creator };
 }
