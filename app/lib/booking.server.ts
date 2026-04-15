@@ -64,19 +64,21 @@ export async function getActiveBookingLinksForCreator(creatorId: number) {
 }
 
 export async function getUpcomingBookingsForCreator(creatorId: number) {
-  return db.query.bookings.findMany({
+  const rows = await db.query.bookings.findMany({
     where: and(eq(bookings.creatorId, creatorId), eq(bookings.status, "confirmed")),
     orderBy: [desc(bookings.startsAt)],
     limit: 10,
   });
+  return enrichBookings(rows);
 }
 
 export async function getUpcomingBookingsForUser(userId: string) {
-  return db.query.bookings.findMany({
+  const rows = await db.query.bookings.findMany({
     where: eq(bookings.userId, userId),
     orderBy: [desc(bookings.startsAt)],
     limit: 10,
   });
+  return enrichBookings(rows);
 }
 
 export async function getRemainingCallCredits(userId: string, creatorId: number) {
@@ -102,7 +104,10 @@ export type BookingSlot = {
   dateLabel: string;
 };
 
-export async function listAvailableSlotsForBookingLink(bookingLinkId: number) {
+export async function listAvailableSlotsForBookingLink(
+  bookingLinkId: number,
+  options?: { excludeBookingId?: number }
+) {
   const bookingLink = await db.query.bookingLinks.findFirst({
     where: eq(bookingLinks.id, bookingLinkId),
   });
@@ -179,7 +184,16 @@ export async function listAvailableSlotsForBookingLink(bookingLinkId: number) {
         );
 
         if (hasBlockingOverride(cursor, endsAt, overrides)) continue;
-        if (hasBookingConflict(cursor, endsAt, existingBookings)) continue;
+        if (
+          hasBookingConflict(
+            cursor,
+            endsAt,
+            existingBookings,
+            options?.excludeBookingId
+          )
+        ) {
+          continue;
+        }
 
         const key = cursor.toISOString();
         if (seen.has(key)) continue;
@@ -266,7 +280,7 @@ export async function createBookingFromCredit(args: {
         bookingLinkId: bookingLink.id,
         creatorId: bookingLink.creatorId,
         userId: user.id,
-        status: "confirmed",
+        status: "pending",
         startsAt,
         endsAt: new Date(chosenSlot.endsAt),
         timezone: creator.timezone,
@@ -282,17 +296,237 @@ export async function createBookingFromCredit(args: {
       throw new Error("Failed to create booking.");
     }
 
-    await tx.insert(callCreditTransactions).values({
-      userId: user.id,
-      creatorId: bookingLink.creatorId,
-      bookingId: booking.id,
-      type: "consume",
-      quantity: -1,
-      note: `Credit consumed for booking #${booking.id}`,
+    return {
+      booking,
+      bookingLink,
+      creator,
+      attendeeName:
+        profile?.displayName ||
+        [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+        user.email,
+      attendeeEmail: user.email,
+    };
+  });
+}
+
+export async function confirmPendingBooking(args: {
+  bookingId: number;
+  googleCalendarEventId?: string | null;
+  telegramMessageId?: string | null;
+}) {
+  return db.transaction(async (tx) => {
+    const booking = await tx.query.bookings.findFirst({
+      where: eq(bookings.id, args.bookingId),
+    });
+    if (!booking) {
+      throw new Error("Booking not found.");
+    }
+    if (!booking.userId) {
+      throw new Error("Booking is missing a user.");
+    }
+
+    const existingConsumption = await tx.query.callCreditTransactions.findFirst({
+      where: and(
+        eq(callCreditTransactions.bookingId, booking.id),
+        eq(callCreditTransactions.type, "consume")
+      ),
     });
 
-    return booking;
+    if (!existingConsumption) {
+      await tx.insert(callCreditTransactions).values({
+        userId: booking.userId,
+        creatorId: booking.creatorId,
+        bookingId: booking.id,
+        type: "consume",
+        quantity: -1,
+        note: `Credit consumed for booking #${booking.id}`,
+      });
+    }
+
+    const [updated] = await tx
+      .update(bookings)
+      .set({
+        status: "confirmed",
+        googleCalendarEventId: args.googleCalendarEventId || null,
+        telegramMessageId: args.telegramMessageId || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, booking.id))
+      .returning();
+
+    return updated || booking;
   });
+}
+
+export async function cancelPendingBooking(bookingId: number) {
+  await db
+    .delete(bookings)
+    .where(and(eq(bookings.id, bookingId), eq(bookings.status, "pending")));
+}
+
+export async function cancelConfirmedBooking(args: {
+  bookingId: number;
+  userId: string;
+  minimumNoticeHours?: number;
+}) {
+  const minimumNoticeHours = args.minimumNoticeHours ?? 24;
+
+  return db.transaction(async (tx) => {
+    const booking = await tx.query.bookings.findFirst({
+      where: and(eq(bookings.id, args.bookingId), eq(bookings.userId, args.userId)),
+    });
+    if (!booking) {
+      throw new Error("Booking not found.");
+    }
+    if (booking.status !== "confirmed") {
+      throw new Error("Only confirmed bookings can be canceled.");
+    }
+
+    const cutoff = new Date(
+      new Date(booking.startsAt).getTime() - minimumNoticeHours * 60 * 60 * 1000
+    );
+    if (Date.now() > cutoff.getTime()) {
+      throw new Error("This booking is inside the cancellation window.");
+    }
+
+    const existingRefund = await tx.query.callCreditTransactions.findFirst({
+      where: and(
+        eq(callCreditTransactions.bookingId, booking.id),
+        eq(callCreditTransactions.type, "refund")
+      ),
+    });
+
+    if (!existingRefund) {
+      await tx.insert(callCreditTransactions).values({
+        userId: args.userId,
+        creatorId: booking.creatorId,
+        bookingId: booking.id,
+        type: "refund",
+        quantity: 1,
+        note: `Credit restored from cancellation for booking #${booking.id}`,
+      });
+    }
+
+    const [updated] = await tx
+      .update(bookings)
+      .set({
+        status: "canceled",
+        canceledAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, booking.id))
+      .returning();
+
+    const creator = await tx.query.creators.findFirst({
+      where: eq(creators.id, booking.creatorId),
+    });
+    const bookingLink = await tx.query.bookingLinks.findFirst({
+      where: eq(bookingLinks.id, booking.bookingLinkId),
+    });
+
+    return {
+      booking: updated || booking,
+      creator,
+      bookingLink,
+    };
+  });
+}
+
+export async function getReschedulableBookingForUser(args: {
+  bookingId: number;
+  userId: string;
+}) {
+  const booking = await db.query.bookings.findFirst({
+    where: and(eq(bookings.id, args.bookingId), eq(bookings.userId, args.userId)),
+  });
+  if (!booking || booking.status !== "confirmed") {
+    return null;
+  }
+
+  const cutoff = new Date(new Date(booking.startsAt).getTime() - 24 * 60 * 60 * 1000);
+  if (Date.now() > cutoff.getTime()) {
+    return null;
+  }
+
+  const bookingLink = await db.query.bookingLinks.findFirst({
+    where: eq(bookingLinks.id, booking.bookingLinkId),
+  });
+  if (!bookingLink) {
+    return null;
+  }
+
+  return { booking, bookingLink };
+}
+
+export async function rescheduleConfirmedBooking(args: {
+  bookingId: number;
+  userId: string;
+  startsAtIso: string;
+}) {
+  const current = await getReschedulableBookingForUser({
+    bookingId: args.bookingId,
+    userId: args.userId,
+  });
+  if (!current) {
+    throw new Error("This booking cannot be rescheduled.");
+  }
+
+  const startsAt = new Date(args.startsAtIso);
+  if (Number.isNaN(startsAt.getTime())) {
+    throw new Error("Invalid slot.");
+  }
+
+  const availableSlots = await listAvailableSlotsForBookingLink(current.bookingLink.id, {
+    excludeBookingId: current.booking.id,
+  });
+  const chosenSlot = availableSlots.find((slot) => slot.startsAt === startsAt.toISOString());
+  if (!chosenSlot) {
+    throw new Error("This slot is no longer available.");
+  }
+
+  const creator = await db.query.creators.findFirst({
+    where: eq(creators.id, current.booking.creatorId),
+  });
+  if (!creator) {
+    throw new Error("Creator not found.");
+  }
+
+  return {
+    booking: current.booking,
+    bookingLink: current.bookingLink,
+    creator,
+    attendeeName: current.booking.attendeeName,
+    attendeeEmail: current.booking.attendeeEmail,
+    oldStartsAt: new Date(current.booking.startsAt),
+    newStartsAt: startsAt,
+    newEndsAt: new Date(chosenSlot.endsAt),
+  };
+}
+
+export async function confirmRescheduledBooking(args: {
+  bookingId: number;
+  startsAt: Date;
+  endsAt: Date;
+  googleCalendarEventId?: string | null;
+  telegramMessageId?: string | null;
+}) {
+  const [updated] = await db
+    .update(bookings)
+    .set({
+      startsAt: args.startsAt,
+      endsAt: args.endsAt,
+      googleCalendarEventId: args.googleCalendarEventId || null,
+      telegramMessageId: args.telegramMessageId || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(bookings.id, args.bookingId))
+    .returning();
+
+  if (!updated) {
+    throw new Error("Failed to update booking.");
+  }
+
+  return updated;
 }
 
 function hasBlockingOverride(
@@ -310,10 +544,12 @@ function hasBlockingOverride(
 function hasBookingConflict(
   startsAt: Date,
   endsAt: Date,
-  existingBookings: Array<typeof bookings.$inferSelect>
+  existingBookings: Array<typeof bookings.$inferSelect>,
+  excludeBookingId?: number
 ) {
   return existingBookings.some(
     (booking) =>
+      booking.id !== excludeBookingId &&
       startsAt < new Date(booking.endsAt) && endsAt > new Date(booking.startsAt)
   );
 }
@@ -400,4 +636,47 @@ function formatTimeLabel(date: Date, timeZone: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+async function enrichBookings(rows: Array<typeof bookings.$inferSelect>) {
+  if (rows.length === 0) return [];
+
+  const linkIds = [...new Set(rows.map((row) => row.bookingLinkId))];
+  const creatorIds = [...new Set(rows.map((row) => row.creatorId))];
+
+  const [links, bookingCreators] = await Promise.all([
+    db.query.bookingLinks.findMany({
+      where: inArray(bookingLinks.id, linkIds),
+    }),
+    db.query.creators.findMany({
+      where: inArray(creators.id, creatorIds),
+    }),
+  ]);
+
+  const linksById = new Map(links.map((link) => [link.id, link]));
+  const creatorsById = new Map(bookingCreators.map((creator) => [creator.id, creator]));
+
+  return rows.map((row) => {
+    const link = linksById.get(row.bookingLinkId);
+    const creator = creatorsById.get(row.creatorId);
+    return {
+      ...row,
+      bookingLinkTitle: link?.title || "Session",
+      bookingLinkSlug: link?.slug || "",
+      creatorDisplayName: creator?.displayName || "Creator",
+      calendarConnected: Boolean(row.googleCalendarEventId),
+      telegramSent: Boolean(row.telegramMessageId),
+      canCancel:
+        row.status === "confirmed" &&
+        new Date(row.startsAt).getTime() - Date.now() > 24 * 60 * 60 * 1000,
+      canReschedule:
+        row.status === "confirmed" &&
+        new Date(row.startsAt).getTime() - Date.now() > 24 * 60 * 60 * 1000,
+      startsAtLabel: new Intl.DateTimeFormat("en-US", {
+        timeZone: row.timezone,
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(row.startsAt)),
+    };
+  });
 }

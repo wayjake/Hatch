@@ -5,6 +5,7 @@ import { getAuthUserId, getOrCreateUser } from "~/lib/auth.server";
 import {
   getBookingLinkDetailBySlug,
   getRemainingCallCredits,
+  getReschedulableBookingForUser,
   listAvailableSlotsForBookingLink,
 } from "~/lib/booking.server";
 
@@ -23,18 +24,29 @@ export async function loader(args: Route.LoaderArgs) {
   if (userId) {
     await getOrCreateUser(args);
   }
+  const url = new URL(args.request.url);
+  const rescheduleBookingId = Number(url.searchParams.get("rescheduleBookingId") || 0);
 
   const bookingLinkDetail = await getBookingLinkDetailBySlug(slug);
   if (!bookingLinkDetail) {
     throw new Response("Booking link not found", { status: 404 });
   }
 
+  const rescheduleBooking =
+    userId && rescheduleBookingId
+      ? await getReschedulableBookingForUser({
+          bookingId: rescheduleBookingId,
+          userId,
+        })
+      : null;
   const remainingCredits = userId
     ? await getRemainingCallCredits(userId, bookingLinkDetail.bookingLink.creatorId)
     : 0;
   const slots =
-    remainingCredits > 0
-      ? await listAvailableSlotsForBookingLink(bookingLinkDetail.bookingLink.id)
+    remainingCredits > 0 || Boolean(rescheduleBooking)
+      ? await listAvailableSlotsForBookingLink(bookingLinkDetail.bookingLink.id, {
+          excludeBookingId: rescheduleBooking?.booking.id,
+        })
       : [];
 
   return {
@@ -42,15 +54,24 @@ export async function loader(args: Route.LoaderArgs) {
     remainingCredits,
     slots,
     isAuthenticated: Boolean(userId),
+    rescheduleBooking,
   };
 }
 
 export default function BookingPage({
   loaderData,
 }: Route.ComponentProps) {
-  const { bookingLink, offers, remainingCredits, slots, isAuthenticated } = loaderData;
+  const {
+    bookingLink,
+    offers,
+    remainingCredits,
+    slots,
+    isAuthenticated,
+    rescheduleBooking,
+  } = loaderData;
   const purchaseFetcher = useFetcher<{ ok: boolean; checkoutUrl?: string }>();
   const bookingFetcher = useFetcher<{ ok: boolean; bookingId?: number; error?: string }>();
+  const isRescheduling = Boolean(rescheduleBooking);
 
   useEffect(() => {
     if (purchaseFetcher.data?.checkoutUrl) {
@@ -63,9 +84,9 @@ export default function BookingPage({
       <div>
         <h1 className="text-3xl font-bold text-gray-900">{bookingLink.title}</h1>
         <p className="mt-3 max-w-2xl text-sm text-gray-500">
-          Purchase happens before scheduling. Buying a package adds credits to
-          your account, and those credits are what you spend later when you pick
-          an actual time.
+          {isRescheduling
+            ? "Choose a new time for your existing booking. Your credit balance will not change."
+            : "Purchase happens before scheduling. Buying a package adds credits to your account, and those credits are what you spend later when you pick an actual time."}
         </p>
       </div>
 
@@ -75,15 +96,20 @@ export default function BookingPage({
           <p>Minimum notice: {bookingLink.minimumNoticeHours} hours</p>
           <p>Booking horizon: {bookingLink.bookingHorizonDays} days</p>
           <p>Available credits: {remainingCredits}</p>
+          {isRescheduling && (
+            <p>Current booking: {rescheduleBooking?.booking.attendeeEmail}</p>
+          )}
         </div>
 
         {!isAuthenticated ? (
           <p className="mt-8 text-sm text-gray-500">
             Sign in first so purchased credits can be attached to your account.
           </p>
-        ) : remainingCredits > 0 ? (
+        ) : isRescheduling || remainingCredits > 0 ? (
           <div className="mt-8 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Choose a Time</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {isRescheduling ? "Choose a New Time" : "Choose a Time"}
+            </h2>
             {slots.length === 0 ? (
               <p className="text-sm text-gray-500">
                 No open slots are currently available for this booking link.
@@ -93,11 +119,18 @@ export default function BookingPage({
                 <bookingFetcher.Form
                   key={slot.startsAt}
                   method="post"
-                  action="/api/bookings/create"
+                  action={isRescheduling ? "/api/bookings/reschedule" : "/api/bookings/create"}
                   className="flex items-center justify-between rounded-xl border border-gray-100 p-4"
                 >
                   <input type="hidden" name="bookingLinkSlug" value={bookingLink.slug} />
                   <input type="hidden" name="startsAt" value={slot.startsAt} />
+                  {isRescheduling && (
+                    <input
+                      type="hidden"
+                      name="bookingId"
+                      value={rescheduleBooking?.booking.id}
+                    />
+                  )}
                   <div>
                     <p className="font-medium text-gray-900">{slot.dateLabel}</p>
                     <p className="text-sm text-gray-500">{slot.label}</p>
@@ -107,15 +140,21 @@ export default function BookingPage({
                     className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
                   >
                     {bookingFetcher.state === "submitting"
-                      ? "Booking..."
-                      : "Use 1 Credit"}
+                      ? isRescheduling
+                        ? "Rescheduling..."
+                        : "Booking..."
+                      : isRescheduling
+                        ? "Reschedule"
+                        : "Use 1 Credit"}
                   </button>
                 </bookingFetcher.Form>
               ))
             )}
             {bookingFetcher.data?.ok && (
               <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">
-                Booking confirmed. You can see it in your account dashboard.
+                {isRescheduling
+                  ? "Booking rescheduled successfully."
+                  : "Booking confirmed. You can see it in your account dashboard."}
               </div>
             )}
             {bookingFetcher.data?.error && (

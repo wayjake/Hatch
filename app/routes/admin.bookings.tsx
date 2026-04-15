@@ -47,17 +47,41 @@ export default function AdminBookings({
           {loaderData.bookings.map((booking) => (
             <div
               key={booking.id}
-              className="flex items-center justify-between border-b border-gray-100 px-5 py-4 last:border-b-0"
+              className="border-b border-gray-100 px-5 py-4 last:border-b-0"
             >
-              <div>
-                <p className="font-medium text-gray-900">{booking.attendeeEmail}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(booking.startsAt).toLocaleString()}
-                </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium text-gray-900">{booking.bookingLinkTitle}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {booking.attendeeName || booking.attendeeEmail}
+                  </p>
+                  <p className="text-sm text-gray-500">{booking.attendeeEmail}</p>
+                  <p className="mt-1 text-sm text-gray-500">{booking.startsAtLabel}</p>
+                </div>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
+                  {booking.status}
+                </span>
               </div>
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
-                {booking.status}
-              </span>
+              <div className="mt-3 flex gap-2 text-xs">
+                <span
+                  className={`rounded-full px-2.5 py-1 ${
+                    booking.calendarConnected
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {booking.calendarConnected ? "Calendar Synced" : "Calendar Pending"}
+                </span>
+                <span
+                  className={`rounded-full px-2.5 py-1 ${
+                    booking.telegramSent
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {booking.telegramSent ? "Telegram Sent" : "Telegram Pending"}
+                </span>
+              </div>
             </div>
           ))}
         </div>

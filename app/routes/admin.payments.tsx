@@ -9,6 +9,10 @@ import {
   createStripeOnboardingLink,
   refreshStripeConnectStatus,
 } from "~/lib/stripe-connect.server";
+import {
+  getCreatorGoogleCalendarIntegration,
+  isGoogleCalendarConfigured,
+} from "~/lib/google-calendar.server";
 import { listCreatorOffers } from "~/lib/stripe.server";
 
 export function meta() {
@@ -32,17 +36,22 @@ export async function loader(args: Route.LoaderArgs) {
     : null;
 
   const creatorOffers = creator ? await listCreatorOffers(creator.id) : [];
+  const googleIntegration = creator
+    ? await getCreatorGoogleCalendarIntegration(creator.id)
+    : null;
 
   return {
     admin,
     creator,
     integration,
+    googleIntegration,
     offers: creatorOffers,
     stripeConfigured: Boolean(
       process.env.STRIPE_SECRET_KEY &&
         process.env.STRIPE_PUBLISHABLE_KEY &&
         process.env.STRIPE_WEBHOOK_SECRET
     ),
+    googleConfigured: isGoogleCalendarConfigured(),
   };
 }
 
@@ -192,6 +201,29 @@ export default function AdminPayments({ loaderData }: Route.ComponentProps) {
                 </button>
               </Form>
             </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-gray-100 bg-white p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-900">Google Calendar</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {loaderData.googleIntegration?.status === "active"
+                ? "Connected and ready for busy checks and event creation."
+                : loaderData.googleConfigured
+                  ? "Not connected yet."
+                  : "Missing Google OAuth environment variables."}
+            </p>
+          </div>
+          {loaderData.creator && loaderData.googleConfigured && (
+            <a
+              href="/api/google-calendar/connect"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
+            >
+              {loaderData.googleIntegration ? "Reconnect Calendar" : "Connect Calendar"}
+            </a>
           )}
         </div>
       </div>
