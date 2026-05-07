@@ -3,34 +3,31 @@ import type { Route } from "./+types/admin.payments";
 import { and, eq } from "drizzle-orm";
 import { db } from "~/db";
 import { creatorIntegrations, creators, offers } from "~/db/schema";
-import { requireAdmin } from "~/lib/auth.server";
-import {
-  createExpressConnectedAccount,
-  createStripeOnboardingLink,
-  refreshStripeConnectStatus,
-} from "~/lib/stripe-connect.server";
+import { promoteUserToCreator, requireCreatorAdmin } from "~/lib/auth.server";
 import {
   getCreatorGoogleCalendarIntegration,
   isGoogleCalendarConfigured,
 } from "~/lib/google-calendar.server";
-import { listCreatorOffers } from "~/lib/stripe.server";
+import {
+  CREATOR_STRIPE_INTEGRATION_TYPE,
+  connectCreatorStripeAccessToken,
+  disconnectCreatorStripeAccessToken,
+  listCreatorOffers,
+} from "~/lib/stripe.server";
 
 export function meta() {
   return [{ title: "Payments — Admin — Hatch" }];
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  const admin = await requireAdmin(args);
-
-  let creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
+  const { user, creator } = await requireCreatorAdmin(args);
+  const origin = new URL(args.request.url).origin;
 
   const integration = creator
     ? await db.query.creatorIntegrations.findFirst({
         where: and(
           eq(creatorIntegrations.creatorId, creator.id),
-          eq(creatorIntegrations.type, "stripe_connect")
+          eq(creatorIntegrations.type, CREATOR_STRIPE_INTEGRATION_TYPE)
         ),
       })
     : null;
@@ -41,40 +38,43 @@ export async function loader(args: Route.LoaderArgs) {
     : null;
 
   return {
-    admin,
+    admin: user,
     creator,
     integration,
     googleIntegration,
     offers: creatorOffers,
-    stripeConfigured: Boolean(
-      process.env.STRIPE_SECRET_KEY &&
-        process.env.STRIPE_PUBLISHABLE_KEY &&
-        process.env.STRIPE_WEBHOOK_SECRET
-    ),
     googleConfigured: isGoogleCalendarConfigured(),
+    webhookEndpointUrl: creator
+      ? `${origin}/api/stripe/webhook?creatorId=${creator.id}`
+      : null,
   };
 }
 
 export async function action(args: Route.ActionArgs) {
-  const admin = await requireAdmin(args);
+  const { user, creator: existingCreator } = await requireCreatorAdmin(args);
   const formData = await args.request.formData();
   const intent = String(formData.get("intent") || "");
 
-  let creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
+  let creator = existingCreator;
 
   if (intent === "create-creator") {
     if (!creator) {
+      const slug = user.email.split("@")[0];
+      const displayName =
+        [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+      if (!slug || !displayName) {
+        return {
+          ok: false,
+          error:
+            "Your profile is missing an email or name. Update it in Clerk, reload, and try again.",
+        };
+      }
       const [created] = await db
         .insert(creators)
-        .values({
-          userId: admin.id,
-          slug: admin.email.split("@")[0],
-          displayName: [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.email,
-        })
+        .values({ userId: user.id, slug, displayName })
         .returning();
       creator = created ?? null;
+      await promoteUserToCreator(user.id);
     }
     return { ok: true };
   }
@@ -112,49 +112,95 @@ export async function action(args: Route.ActionArgs) {
     return { ok: true };
   }
 
-  if (intent === "connect-stripe") {
-    const integration = await db.query.creatorIntegrations.findFirst({
-      where: and(
-        eq(creatorIntegrations.creatorId, creator.id),
-        eq(creatorIntegrations.type, "stripe_connect")
-      ),
-    });
-    const accountId =
-      integration?.externalAccountId ||
-      (
-        await createExpressConnectedAccount({
-          creatorId: creator.id,
-          email: admin.email,
-        })
-      ).id;
-    const link = await createStripeOnboardingLink(accountId);
-    return Response.redirect(link.url, 302);
+  if (intent === "save-payment-provider") {
+    const provider = String(formData.get("provider") || "stripe").trim();
+    const accessToken = String(formData.get("accessToken") || "").trim();
+    const webhookSecret = String(formData.get("webhookSecret") || "").trim();
+
+    if (provider !== "stripe") {
+      return { ok: false, error: "Only Stripe access tokens are supported right now." };
+    }
+
+    if (!accessToken) {
+      return { ok: false, error: "Enter a Stripe secret key." };
+    }
+
+    if (!webhookSecret) {
+      return { ok: false, error: "Enter the Stripe webhook signing secret." };
+    }
+
+    try {
+      await connectCreatorStripeAccessToken({
+        creatorId: creator.id,
+        accessToken,
+        webhookSecret,
+      });
+      return { ok: true, message: "Payment provider saved." };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to validate the access token.";
+      return { ok: false, error: message };
+    }
   }
 
-  if (intent === "refresh-stripe-status") {
-    await refreshStripeConnectStatus(creator.id);
-    return { ok: true };
+  if (intent === "disconnect-payment-provider") {
+    await disconnectCreatorStripeAccessToken(creator.id);
+    return { ok: true, message: "Payment provider disconnected." };
   }
 
   return { ok: false, error: "Unknown action" };
 }
 
-export default function AdminPayments({ loaderData }: Route.ComponentProps) {
+function parseIntegrationMetadata(metadata: string) {
+  try {
+    return JSON.parse(metadata) as {
+      provider?: string;
+      accountId?: string | null;
+      accountEmail?: string | null;
+      accountCountry?: string | null;
+      businessName?: string | null;
+      tokenPreview?: string | null;
+      webhookSecretPreview?: string | null;
+    };
+  } catch {
+    return {};
+  }
+}
+
+export default function AdminPayments({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const integrationMetadata = loaderData.integration
+    ? parseIntegrationMetadata(loaderData.integration.metadata)
+    : null;
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
       <p className="max-w-2xl text-sm text-gray-500">
-        Stripe Connect onboarding, coaching offers, and commission-backed
-        checkout flows are wired here first.
+        Creators can plug in their own payment credentials here instead of going
+        through a managed connected-account onboarding flow.
       </p>
+
+      {actionData?.error && (
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+          {actionData.error}
+        </div>
+      )}
+      {actionData?.ok && actionData.message && (
+        <div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-700">
+          {actionData.message}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-gray-100 bg-white p-5">
-          <p className="text-sm font-medium text-gray-900">Stripe Config</p>
+          <p className="text-sm font-medium text-gray-900">Checkout Model</p>
           <p className="mt-2 text-sm text-gray-500">
-            {loaderData.stripeConfigured
-              ? "Configured"
-              : "Missing one or more Stripe environment variables."}
+            Hatch now creates checkout sessions with each creator&apos;s own
+            provider credentials. No platform-level connected-account setup is
+            required.
           </p>
         </div>
 
@@ -179,30 +225,124 @@ export default function AdminPayments({ loaderData }: Route.ComponentProps) {
       <div className="rounded-xl border border-gray-100 bg-white p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">Stripe Connect</p>
+            <p className="text-sm font-medium text-gray-900">Payment Provider</p>
             <p className="mt-1 text-sm text-gray-500">
-              {loaderData.integration?.externalAccountId
-                ? `Connected account: ${loaderData.integration.externalAccountId}`
-                : "No connected account yet"}
+              {loaderData.integration?.accessToken
+                ? `Stripe token saved for ${integrationMetadata?.businessName || integrationMetadata?.accountEmail || integrationMetadata?.accountId || "this creator"}.`
+                : "No provider token saved yet."}
             </p>
           </div>
-          {loaderData.creator && (
-            <div className="flex gap-3">
-              <Form method="post">
-                <input type="hidden" name="intent" value="connect-stripe" />
-                <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
-                  {loaderData.integration ? "Re-open Onboarding" : "Connect Stripe"}
-                </button>
-              </Form>
-              <Form method="post">
-                <input type="hidden" name="intent" value="refresh-stripe-status" />
-                <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">
-                  Refresh Status
-                </button>
-              </Form>
-            </div>
-          )}
         </div>
+
+        {loaderData.creator ? (
+          <div className="mt-4 space-y-4">
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="intent" value="save-payment-provider" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-1 text-sm text-gray-600">
+                  <span>Provider</span>
+                  <select
+                    name="provider"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    defaultValue="stripe"
+                  >
+                    <option value="stripe">Stripe</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm text-gray-600">
+                  <span>Secret Key</span>
+                  <input
+                    type="password"
+                    name="accessToken"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    placeholder="sk_live_... or sk_test_..."
+                    autoComplete="off"
+                    required
+                  />
+                </label>
+                <label className="space-y-1 text-sm text-gray-600 md:col-span-2">
+                  <span>Webhook Signing Secret</span>
+                  <input
+                    type="password"
+                    name="webhookSecret"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2"
+                    placeholder="whsec_..."
+                    autoComplete="off"
+                    required
+                  />
+                </label>
+              </div>
+              <p className="text-sm text-gray-500">
+                Start with Stripe. Save both the account&apos;s secret key and the
+                webhook signing secret so Hatch can create checkout sessions and
+                confirm payments asynchronously.
+              </p>
+              <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
+                {loaderData.integration?.accessToken ? "Update Token" : "Save Token"}
+              </button>
+            </Form>
+
+            {loaderData.integration?.accessToken && (
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600">
+                <p>
+                  Saved token: {integrationMetadata?.tokenPreview || "Hidden"}
+                </p>
+                <p className="mt-1">
+                  Webhook secret: {integrationMetadata?.webhookSecretPreview || "Hidden"}
+                </p>
+                {integrationMetadata?.accountId && (
+                  <p className="mt-1">Stripe account: {integrationMetadata.accountId}</p>
+                )}
+                {integrationMetadata?.accountCountry && (
+                  <p className="mt-1">Country: {integrationMetadata.accountCountry}</p>
+                )}
+                <Form method="post" className="mt-4">
+                  <input type="hidden" name="intent" value="disconnect-payment-provider" />
+                  <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">
+                    Disconnect Provider
+                  </button>
+                </Form>
+              </div>
+            )}
+
+            {loaderData.webhookEndpointUrl && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+                <p className="font-medium">Stripe Webhook Setup</p>
+                <ol className="mt-3 list-decimal space-y-2 pl-5">
+                  <li>
+                    In Stripe, open <span className="font-medium">Developers or Workbench → Webhooks</span> and create a new event destination.
+                  </li>
+                  <li>
+                    Choose <span className="font-medium">Account</span> or <span className="font-medium">Your account</span>, not Connect / Connected accounts.
+                  </li>
+                  <li>
+                    Use this endpoint URL:{" "}
+                    <code className="rounded bg-white px-1 py-0.5">
+                      {loaderData.webhookEndpointUrl}
+                    </code>
+                  </li>
+                  <li>
+                    Subscribe to exactly this event:{" "}
+                    <code className="rounded bg-white px-1 py-0.5">
+                      checkout.session.completed
+                    </code>
+                  </li>
+                  <li>
+                    After Stripe creates the endpoint, reveal the signing secret that starts with{" "}
+                    <code className="rounded bg-white px-1 py-0.5">whsec_</code> and paste it into the field above.
+                  </li>
+                </ol>
+                <p className="mt-3 text-xs text-blue-800">
+                  This follows Stripe&apos;s account-webhook flow rather than a Connect webhook. Query-string routing in the URL is an implementation detail on our side so each creator can keep a separate signing secret.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-gray-500">
+            Create the creator profile first.
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-5">

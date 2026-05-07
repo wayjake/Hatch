@@ -11,7 +11,7 @@ import {
   callCreditTransactions,
 } from "~/db/schema";
 
-export const STRIPE_COMMISSION_BPS_DEFAULT = 1500;
+export const CREATOR_STRIPE_INTEGRATION_TYPE = "stripe_connect";
 
 let stripeClient: Stripe | null = null;
 
@@ -20,9 +20,6 @@ export function getStripeConfig() {
     secretKey: process.env.STRIPE_SECRET_KEY || "",
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
-    defaultCommissionBps: Number(
-      process.env.STRIPE_COMMISSION_BPS || STRIPE_COMMISSION_BPS_DEFAULT
-    ),
   };
 }
 
@@ -39,17 +36,119 @@ export function getStripe() {
   return stripeClient;
 }
 
-export function calculateApplicationFee(amountCents: number, commissionBps: number) {
-  return Math.round((amountCents * commissionBps) / 10000);
+export function createStripeClient(secretKey: string) {
+  return new Stripe(secretKey);
 }
 
 export async function getCreatorStripeIntegration(creatorId: number) {
   return db.query.creatorIntegrations.findFirst({
     where: and(
       eq(creatorIntegrations.creatorId, creatorId),
-      eq(creatorIntegrations.type, "stripe_connect")
+      eq(creatorIntegrations.type, CREATOR_STRIPE_INTEGRATION_TYPE)
     ),
   });
+}
+
+function maskStripeAccessToken(accessToken: string) {
+  if (accessToken.length <= 8) {
+    return "Saved";
+  }
+
+  return `${accessToken.slice(0, 4)}...${accessToken.slice(-4)}`;
+}
+
+export async function connectCreatorStripeAccessToken(args: {
+  creatorId: number;
+  accessToken: string;
+  webhookSecret: string;
+}) {
+  const stripe = createStripeClient(args.accessToken);
+  const account = await stripe.accounts.retrieve(null);
+
+  await db
+    .insert(creatorIntegrations)
+    .values({
+      creatorId: args.creatorId,
+      type: CREATOR_STRIPE_INTEGRATION_TYPE,
+      status: "active",
+      externalAccountId: account.id,
+      accessToken: args.accessToken,
+      refreshToken: args.webhookSecret,
+      metadata: JSON.stringify({
+        provider: "stripe",
+        accountId: account.id,
+        accountEmail: account.email,
+        accountCountry: account.country,
+        businessName: account.business_profile?.name || null,
+        tokenPreview: maskStripeAccessToken(args.accessToken),
+        webhookSecretPreview: maskStripeAccessToken(args.webhookSecret),
+      }),
+      connectedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: [
+        creatorIntegrations.creatorId,
+        creatorIntegrations.type,
+      ],
+      set: {
+        status: "active",
+        externalAccountId: account.id,
+        accessToken: args.accessToken,
+        refreshToken: args.webhookSecret,
+        metadata: JSON.stringify({
+          provider: "stripe",
+          accountId: account.id,
+          accountEmail: account.email,
+          accountCountry: account.country,
+          businessName: account.business_profile?.name || null,
+          tokenPreview: maskStripeAccessToken(args.accessToken),
+          webhookSecretPreview: maskStripeAccessToken(args.webhookSecret),
+        }),
+        connectedAt: new Date(),
+        expiresAt: null,
+        updatedAt: new Date(),
+      },
+    });
+
+  return account;
+}
+
+export async function disconnectCreatorStripeAccessToken(creatorId: number) {
+  const integration = await getCreatorStripeIntegration(creatorId);
+  if (!integration) {
+    return;
+  }
+
+  await db
+    .update(creatorIntegrations)
+    .set({
+      status: "disconnected",
+      externalAccountId: null,
+      accessToken: null,
+      refreshToken: null,
+      metadata: "{}",
+      expiresAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(creatorIntegrations.id, integration.id));
+}
+
+async function getCreatorStripeClient(creatorId: number) {
+  const integration = await getCreatorStripeIntegration(creatorId);
+  if (!integration?.accessToken) {
+    throw new Error("Creator has not configured a Stripe access token.");
+  }
+
+  return {
+    integration,
+    stripe: createStripeClient(integration.accessToken),
+  };
+}
+
+export async function getCreatorStripeWebhookSecret(creatorId: number) {
+  const integration = await getCreatorStripeIntegration(creatorId);
+  return integration?.refreshToken || null;
 }
 
 export async function createPendingPurchaseForOffer(args: {
@@ -116,11 +215,6 @@ export async function createCheckoutSessionForPurchase(args: {
     throw new Error("Creator not found.");
   }
 
-  const integration = await getCreatorStripeIntegration(creator.id);
-  if (!integration?.externalAccountId) {
-    throw new Error("Creator is not connected to Stripe.");
-  }
-
   const [item] = await db.query.purchaseItems.findMany({
     where: eq(purchaseItems.purchaseId, purchase.id),
     limit: 1,
@@ -129,15 +223,13 @@ export async function createCheckoutSessionForPurchase(args: {
     throw new Error("Purchase is missing items.");
   }
 
-  const stripe = getStripe();
-  const feeAmount = calculateApplicationFee(
-    purchase.totalCents,
-    getStripeConfig().defaultCommissionBps
-  );
+  const { stripe } = await getCreatorStripeClient(creator.id);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    success_url: `${args.origin}/account/calls?checkout=success`,
+    success_url:
+      `${args.origin}/account/calls?checkout=success&purchaseId=${purchase.id}` +
+      "&session_id={CHECKOUT_SESSION_ID}",
     cancel_url: `${args.origin}/account/calls?checkout=canceled`,
     customer_email: undefined,
     allow_promotion_codes: true,
@@ -153,16 +245,6 @@ export async function createCheckoutSessionForPurchase(args: {
         },
       },
     ],
-    payment_intent_data: {
-      application_fee_amount: feeAmount,
-      transfer_data: {
-        destination: integration.externalAccountId,
-      },
-      metadata: {
-        purchaseId: String(purchase.id),
-        creatorId: String(creator.id),
-      },
-    },
     metadata: {
       purchaseId: String(purchase.id),
       creatorId: String(creator.id),
@@ -180,6 +262,32 @@ export async function createCheckoutSessionForPurchase(args: {
     .where(eq(purchases.id, purchase.id));
 
   return session;
+}
+
+export async function confirmCheckoutSessionForPurchase(args: {
+  purchaseId: number;
+  sessionId: string;
+}) {
+  const purchase = await db.query.purchases.findFirst({
+    where: eq(purchases.id, args.purchaseId),
+  });
+  if (!purchase) {
+    throw new Error("Purchase not found.");
+  }
+
+  const { stripe } = await getCreatorStripeClient(purchase.creatorId);
+  const session = await stripe.checkout.sessions.retrieve(args.sessionId);
+
+  if (String(session.metadata?.purchaseId || "") !== String(purchase.id)) {
+    throw new Error("Checkout session does not match this purchase.");
+  }
+
+  if (session.payment_status === "paid") {
+    await fulfillCheckoutSession(session);
+    return { fulfilled: true, session };
+  }
+
+  return { fulfilled: false, session };
 }
 
 export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {

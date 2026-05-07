@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Route } from "./+types/become-a-creator";
 import { db } from "~/db";
 import { creators, leadPages } from "~/db/schema";
-import { requireSignedInUser } from "~/lib/auth.server";
+import { promoteUserToCreator, requireSignedInUser } from "~/lib/auth.server";
 import { validateHandle, normalizeHandle } from "~/lib/reserved-handles";
 
 export function meta() {
@@ -75,6 +75,7 @@ export async function action(args: Route.ActionArgs) {
     await db.insert(leadPages).values({
       creatorId: created.id,
     });
+    await promoteUserToCreator(user.id);
   } catch (err) {
     return {
       general: "Something went wrong creating your creator account.",

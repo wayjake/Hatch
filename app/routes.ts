@@ -26,6 +26,8 @@ export default [
   route("api/enroll", "routes/api.enroll.ts"),
   route("api/uploadthing", "routes/api.uploadthing.ts"),
   route("api/bookings/create", "routes/api.bookings.create.ts"),
+  route("api/google-calendar/connect", "routes/api.google-calendar.connect.ts"),
+  route("api/google-calendar/callback", "routes/api.google-calendar.callback.ts"),
   route("api/stripe/checkout", "routes/api.stripe.checkout.ts"),
   route("api/stripe/webhook", "routes/api.stripe.webhook.ts"),
 
@@ -36,15 +38,23 @@ export default [
     route("studio/settings", "routes/studio.settings.tsx"),
   ]),
 
-  // Admin routes
+  // Creator admin routes
   layout("routes/admin.tsx", [
     route("admin", "routes/admin.dashboard.tsx"),
     route("admin/bookings", "routes/admin.bookings.tsx"),
     route("admin/booking-links", "routes/admin.booking-links.tsx"),
     route("admin/availability", "routes/admin.availability.tsx"),
     route("admin/payments", "routes/admin.payments.tsx"),
-    route("admin/users", "routes/admin.users.tsx"),
-    route("admin/courses", "routes/admin.courses.tsx"),
-    route("admin/courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/admin.lesson.tsx"),
+  ]),
+
+  // Platform admin routes
+  layout("routes/super.admin.tsx", [
+    route("super/admin", "routes/super.admin.dashboard.tsx"),
+    route("super/admin/users", "routes/admin.users.tsx"),
+    route("super/admin/courses", "routes/admin.courses.tsx"),
+    route(
+      "super/admin/courses/:courseSlug/:moduleSlug/:lessonSlug",
+      "routes/admin.lesson.tsx"
+    ),
   ]),
 ] satisfies RouteConfig;

@@ -9,6 +9,7 @@ import {
 } from "~/lib/courses-admin.server";
 import { generateReactHelpers } from "@uploadthing/react";
 import type { UploadRouter } from "~/lib/uploadthing.server";
+import { requireAdmin } from "~/lib/auth.server";
 
 const { useUploadThing } = generateReactHelpers<UploadRouter>({
   url: "/api/uploadthing",
@@ -18,13 +19,15 @@ export function meta({ data }: Route.MetaArgs) {
   return [
     {
       title: data?.lesson
-        ? `Edit: ${data.lesson.title} — Admin — Hatch`
-        : "Lesson Not Found — Admin — Hatch",
+        ? `Edit: ${data.lesson.title} — Super Admin — Hatch`
+        : "Lesson Not Found — Super Admin — Hatch",
     },
   ];
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader(args: Route.LoaderArgs) {
+  await requireAdmin(args);
+  const { params } = args;
   const course = getCourse(params.courseSlug!);
   if (!course) throw new Response("Course not found", { status: 404 });
 
@@ -60,7 +63,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ params, request }: Route.ActionArgs) {
+export async function action(args: Route.ActionArgs) {
+  await requireAdmin(args);
+  const { params, request } = args;
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 
@@ -123,7 +128,7 @@ export default function AdminLesson({ loaderData }: Route.ComponentProps) {
     <div className="max-w-3xl">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link to="/admin/courses" className="hover:text-gray-600">
+        <Link to="/super/admin/courses" className="hover:text-gray-600">
           Courses
         </Link>
         <span>/</span>

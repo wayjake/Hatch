@@ -4,15 +4,20 @@ import {
   SignUpButton,
   UserButton,
   useAuth,
-  useUser,
 } from "@clerk/react-router";
+import type { AppUserRole } from "~/lib/auth.server";
 
-export function Nav() {
+export function Nav({
+  currentUser,
+}: {
+  currentUser?: { role: AppUserRole } | null;
+}) {
   const location = useLocation();
   const isTeleprompter = location.pathname.startsWith("/teleprompter");
   const isCreatorPage = location.pathname.startsWith("/@");
+  const isBookingPage = location.pathname.startsWith("/book/");
 
-  if (isTeleprompter || isCreatorPage) return null;
+  if (isTeleprompter || isCreatorPage || isBookingPage) return null;
 
   return (
     <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -51,30 +56,33 @@ export function Nav() {
           >
             Community
           </Link>
-          <AuthSection />
+          <AuthSection role={currentUser?.role} />
         </div>
       </nav>
     </header>
   );
 }
 
-function AuthSection() {
+function AuthSection({ role }: { role?: AppUserRole }) {
   const { isSignedIn } = useAuth();
-  const { user } = useUser();
 
   if (isSignedIn) {
-    const isAdmin =
-      (user?.publicMetadata?.role as string) === "admin" ||
-      (user?.unsafeMetadata?.role as string) === "admin";
-
     return (
       <>
-        {isAdmin && (
+        {role === "creator" && (
           <Link
             to="/admin"
             className="text-sm font-medium text-brand-violet hover:text-brand-indigo transition-colors"
           >
             Admin
+          </Link>
+        )}
+        {role === "admin" && (
+          <Link
+            to="/super/admin"
+            className="text-sm font-medium text-brand-violet hover:text-brand-indigo transition-colors"
+          >
+            Super Admin
           </Link>
         )}
         <Link

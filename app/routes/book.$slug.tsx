@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import type { Route } from "./+types/book.$slug";
 import { getAuthUserId, getOrCreateUser } from "~/lib/auth.server";
 import {
@@ -64,12 +64,13 @@ export default function BookingPage({
   const {
     bookingLink,
     offers,
+    creator,
     remainingCredits,
     slots,
     isAuthenticated,
     rescheduleBooking,
   } = loaderData;
-  const purchaseFetcher = useFetcher<{ ok: boolean; checkoutUrl?: string }>();
+  const purchaseFetcher = useFetcher<{ ok: boolean; checkoutUrl?: string; error?: string }>();
   const bookingFetcher = useFetcher<{ ok: boolean; bookingId?: number; error?: string }>();
   const isRescheduling = Boolean(rescheduleBooking);
 
@@ -80,9 +81,41 @@ export default function BookingPage({
   }, [purchaseFetcher.data]);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">{bookingLink.title}</h1>
+    <>
+      {creator && (
+        <header className="border-b border-gray-100 bg-white">
+          <div className="max-w-3xl mx-auto px-6 h-16 flex items-center">
+            <Link
+              to={`/@/${creator.slug}`}
+              className="flex items-center gap-3 group"
+            >
+              {creator.logoUrl ? (
+                <img
+                  src={creator.logoUrl}
+                  alt={creator.displayName}
+                  className="w-9 h-9 rounded-lg object-cover"
+                />
+              ) : (
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-semibold"
+                  style={{ backgroundColor: creator.brandColor }}
+                >
+                  {creator.displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-base font-semibold text-gray-900 group-hover:underline">
+                  {creator.displayName}
+                </span>
+                <span className="text-xs text-gray-500">← Back to profile</span>
+              </div>
+            </Link>
+          </div>
+        </header>
+      )}
+      <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{bookingLink.title}</h1>
         <p className="mt-3 max-w-2xl text-sm text-gray-500">
           {isRescheduling
             ? "Choose a new time for your existing booking. Your credit balance will not change."
@@ -201,9 +234,15 @@ export default function BookingPage({
                 </div>
               </purchaseFetcher.Form>
             ))}
+            {purchaseFetcher.data?.error && (
+              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+                {purchaseFetcher.data.error}
+              </div>
+            )}
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -3,13 +3,15 @@ import type { Route } from "./+types/admin.users";
 import { db } from "~/db";
 import { users, enrollments } from "~/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { requireAdmin } from "~/lib/auth.server";
 import { getCourses } from "~/lib/courses.server";
 
 export function meta() {
-  return [{ title: "Users — Admin — Hatch" }];
+  return [{ title: "Users — Super Admin — Hatch" }];
 }
 
-export async function loader() {
+export async function loader(args: Route.LoaderArgs) {
+  await requireAdmin(args);
   const allUsers = await db.query.users.findMany({
     orderBy: desc(users.createdAt),
   });
@@ -26,7 +28,9 @@ export async function loader() {
   return { users: usersWithEnrollments, courses };
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action(args: Route.ActionArgs) {
+  await requireAdmin(args);
+  const { request } = args;
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
   const userId = formData.get("userId") as string;
@@ -51,7 +55,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   if (intent === "set-role") {
-    const role = formData.get("role") as "customer" | "admin";
+    const role = formData.get("role") as "customer" | "creator" | "admin";
     await db.update(users).set({ role }).where(eq(users.id, userId));
     return { ok: true };
   }
@@ -94,6 +98,7 @@ export default function AdminUsers({ loaderData }: Route.ComponentProps) {
                     className="text-xs border border-gray-200 rounded-lg px-2 py-1 text-gray-600"
                   >
                     <option value="customer">Customer</option>
+                    <option value="creator">Creator</option>
                     <option value="admin">Admin</option>
                   </select>
                 </fetcher.Form>

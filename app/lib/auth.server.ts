@@ -4,6 +4,8 @@ import { eq, and } from "drizzle-orm";
 import { db } from "~/db";
 import { users, enrollments, profiles, creators } from "~/db/schema";
 
+export type AppUserRole = "customer" | "creator" | "admin";
+
 export async function getOrCreateUser(args: LoaderFunctionArgs) {
   const auth = await getAuth(args);
   if (!auth.userId) return null;
@@ -113,6 +115,26 @@ export async function requireAdmin(args: LoaderFunctionArgs) {
   return user;
 }
 
+export async function requireCreatorAdmin(args: LoaderFunctionArgs) {
+  let user = await requireSignedInUser(args);
+  const creator = await db.query.creators.findFirst({
+    where: eq(creators.userId, user.id),
+  });
+
+  if (creator && user.role === "customer") {
+    const promotedUser = await promoteUserToCreator(user.id);
+    if (promotedUser) {
+      user = promotedUser;
+    }
+  }
+
+  if (user.role !== "creator" && user.role !== "admin") {
+    throw new Response("Forbidden", { status: 403 });
+  }
+
+  return { user, creator };
+}
+
 export async function getAuthUserId(args: LoaderFunctionArgs): Promise<string | null> {
   const auth = await getAuth(args);
   return auth.userId;
@@ -125,10 +147,32 @@ export async function requireSignedInUser(args: LoaderFunctionArgs) {
 }
 
 export async function requireCreator(args: LoaderFunctionArgs) {
-  const user = await requireSignedInUser(args);
+  let user = await requireSignedInUser(args);
   const creator = await db.query.creators.findFirst({
     where: eq(creators.userId, user.id),
   });
   if (!creator) throw redirect("/become-a-creator");
+  if (user.role === "customer") {
+    const promotedUser = await promoteUserToCreator(user.id);
+    if (promotedUser) {
+      user = promotedUser;
+    }
+  }
   return { user, creator };
+}
+
+export async function promoteUserToCreator(userId: string) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+  if (!user || user.role !== "customer") {
+    return user;
+  }
+
+  await db
+    .update(users)
+    .set({ role: "creator" })
+    .where(eq(users.id, userId));
+
+  return { ...user, role: "creator" as const };
 }

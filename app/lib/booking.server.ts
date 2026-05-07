@@ -22,12 +22,17 @@ export async function getBookingLinkDetailBySlug(slug: string) {
   const bookingLink = await getBookingLinkBySlug(slug);
   if (!bookingLink) return null;
 
-  const linkedOffers = await db.query.offers.findMany({
-    where: eq(offers.creatorId, bookingLink.creatorId),
-    orderBy: [asc(offers.priceCents)],
-  });
+  const [linkedOffers, creator] = await Promise.all([
+    db.query.offers.findMany({
+      where: eq(offers.creatorId, bookingLink.creatorId),
+      orderBy: [asc(offers.priceCents)],
+    }),
+    db.query.creators.findFirst({
+      where: eq(creators.id, bookingLink.creatorId),
+    }),
+  ]);
 
-  return { bookingLink, offers: linkedOffers };
+  return { bookingLink, offers: linkedOffers, creator };
 }
 
 export async function getBookingLinkSchedule(bookingLinkId: number) {

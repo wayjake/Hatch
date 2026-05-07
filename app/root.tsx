@@ -11,6 +11,7 @@ import { ClerkProvider } from "@clerk/react-router";
 
 import type { Route } from "./+types/root";
 import { Nav } from "~/components/nav";
+import { getOrCreateUser } from "~/lib/auth.server";
 import "./app.css";
 
 export const middleware: Route.MiddlewareFunction[] = [clerkMiddleware()];
@@ -29,7 +30,10 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function loader(args: Route.LoaderArgs) {
-  return rootAuthLoader(args);
+  return rootAuthLoader(args, async () => {
+    const currentUser = await getOrCreateUser(args);
+    return { currentUser };
+  });
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -53,7 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App({ loaderData }: Route.ComponentProps) {
   return (
     <ClerkProvider loaderData={loaderData}>
-      <Nav />
+      <Nav currentUser={loaderData.currentUser} />
       <Outlet />
     </ClerkProvider>
   );

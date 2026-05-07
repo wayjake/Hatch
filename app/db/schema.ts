@@ -6,7 +6,7 @@ export const users = sqliteTable("users", {
   firstName: text("first_name"),
   lastName: text("last_name"),
   stripeCustomerId: text("stripe_customer_id"),
-  role: text("role", { enum: ["customer", "admin"] })
+  role: text("role", { enum: ["customer", "creator", "admin"] })
     .notNull()
     .default("customer"),
   createdAt: integer("created_at", { mode: "timestamp" })

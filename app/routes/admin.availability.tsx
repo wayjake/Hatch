@@ -5,19 +5,15 @@ import {
   availabilityOverrides,
   availabilityRules,
   bookingLinks,
-  creators,
 } from "~/db/schema";
-import { requireAdmin } from "~/lib/auth.server";
+import { requireCreatorAdmin } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Availability — Admin — Hatch" }];
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  const admin = await requireAdmin(args);
-  const creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
+  const { creator } = await requireCreatorAdmin(args);
 
   const links = creator
     ? await db.query.bookingLinks.findMany({
@@ -40,13 +36,9 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export async function action(args: Route.ActionArgs) {
-  const admin = await requireAdmin(args);
+  const { creator } = await requireCreatorAdmin(args);
   const formData = await args.request.formData();
   const intent = String(formData.get("intent") || "");
-
-  const creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
   if (!creator) {
     return { ok: false, error: "Create a creator profile first." };
   }

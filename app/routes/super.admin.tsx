@@ -1,21 +1,19 @@
 import { Link, Outlet, useLocation } from "react-router";
-import type { Route } from "./+types/admin";
-import { requireCreatorAdmin } from "~/lib/auth.server";
+import type { Route } from "./+types/super.admin";
+import { requireAdmin } from "~/lib/auth.server";
 
 export async function loader(args: Route.LoaderArgs) {
-  const { user, creator } = await requireCreatorAdmin(args);
-  return { user, creator };
+  const user = await requireAdmin(args);
+  return { user };
 }
 
 const navItems = [
-  { to: "/admin", label: "Dashboard", end: true },
-  { to: "/admin/bookings", label: "Bookings" },
-  { to: "/admin/booking-links", label: "Booking Links" },
-  { to: "/admin/availability", label: "Availability" },
-  { to: "/admin/payments", label: "Payments" },
+  { to: "/super/admin", label: "Dashboard", end: true },
+  { to: "/super/admin/users", label: "Users" },
+  { to: "/super/admin/courses", label: "Courses" },
 ];
 
-export default function AdminLayout({ loaderData }: Route.ComponentProps) {
+export default function SuperAdminLayout() {
   const location = useLocation();
 
   return (
@@ -24,13 +22,10 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
         <div className="px-4 py-6">
           <div className="px-3 mb-6">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Creator Admin
+              Super Admin
             </div>
-            <div className="mt-1 text-sm font-semibold text-gray-900 truncate">
-              {loaderData.creator?.displayName || loaderData.user.email}
-            </div>
-            <div className="mt-1 text-xs text-gray-500">
-              {loaderData.creator ? "@/" + loaderData.creator.slug : "No creator profile yet"}
+            <div className="mt-1 text-sm font-semibold text-gray-900">
+              Hatch Platform
             </div>
           </div>
           <nav className="space-y-1">

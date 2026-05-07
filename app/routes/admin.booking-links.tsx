@@ -1,18 +1,16 @@
+import { useState } from "react";
 import { and, eq } from "drizzle-orm";
 import type { Route } from "./+types/admin.booking-links";
 import { db } from "~/db";
 import { availabilityRules, bookingLinks, creators } from "~/db/schema";
-import { requireAdmin } from "~/lib/auth.server";
+import { requireCreatorAdmin } from "~/lib/auth.server";
 
 export function meta() {
   return [{ title: "Booking Links — Admin — Hatch" }];
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  const admin = await requireAdmin(args);
-  const creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
+  const { creator } = await requireCreatorAdmin(args);
 
   const links = creator
     ? await db.query.bookingLinks.findMany({
@@ -20,17 +18,15 @@ export async function loader(args: Route.LoaderArgs) {
       })
     : [];
 
-  return { creator, links };
+  const origin = new URL(args.request.url).origin;
+
+  return { creator, links, origin };
 }
 
 export async function action(args: Route.ActionArgs) {
-  const admin = await requireAdmin(args);
+  const { creator } = await requireCreatorAdmin(args);
   const formData = await args.request.formData();
   const intent = String(formData.get("intent") || "");
-
-  const creator = await db.query.creators.findFirst({
-    where: eq(creators.userId, admin.id),
-  });
   if (!creator) {
     return { ok: false, error: "Create a creator profile first." };
   }
@@ -184,6 +180,48 @@ export async function action(args: Route.ActionArgs) {
   return { ok: false, error: "Unknown action." };
 }
 
+function ShareableLink({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function onCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+        Shareable link
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <code className="flex-1 break-all rounded border border-gray-200 bg-white px-2 py-1 text-sm text-gray-800">
+          {url}
+        </code>
+        <button
+          type="button"
+          onClick={onCopy}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+        >
+          Preview
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminBookingLinks({
   loaderData,
   actionData,
@@ -292,7 +330,9 @@ export default function AdminBookingLinks({
                   <input type="hidden" name="intent" value="update-link" />
                   <input type="hidden" name="bookingLinkId" value={link.id} />
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <ShareableLink url={`${loaderData.origin}/book/${link.slug}`} />
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <label className="space-y-1 text-sm text-gray-600">
                       <span>Slug</span>
                       <input
@@ -408,21 +448,18 @@ export default function AdminBookingLinks({
                     </label>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-500">/book/{link.slug}</p>
-                    <div className="flex gap-3">
-                      <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
-                        Save Changes
-                      </button>
-                      <button
-                        type="submit"
-                        name="intent"
-                        value="delete-link"
-                        className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                  <div className="mt-5 flex items-center justify-end gap-3">
+                    <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white">
+                      Save Changes
+                    </button>
+                    <button
+                      type="submit"
+                      name="intent"
+                      value="delete-link"
+                      className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </form>
               ))}

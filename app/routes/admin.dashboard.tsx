@@ -1,89 +1,111 @@
+import { count, eq } from "drizzle-orm";
 import type { Route } from "./+types/admin.dashboard";
 import { db } from "~/db";
-import { users, enrollments, lessonCompletions } from "~/db/schema";
-import { count, desc } from "drizzle-orm";
+import {
+  bookingLinks,
+  bookings,
+  creatorIntegrations,
+  offers,
+} from "~/db/schema";
+import { requireCreatorAdmin } from "~/lib/auth.server";
 
 export function meta() {
-  return [{ title: "Admin Dashboard — Hatch" }];
+  return [{ title: "Creator Admin — Hatch" }];
 }
 
-export async function loader() {
-  const [userCount] = await db.select({ count: count() }).from(users);
-  const [enrollmentCount] = await db
-    .select({ count: count() })
-    .from(enrollments);
-  const [completionCount] = await db
-    .select({ count: count() })
-    .from(lessonCompletions);
+export async function loader(args: Route.LoaderArgs) {
+  const { user, creator } = await requireCreatorAdmin(args);
 
-  const recentUsers = await db.query.users.findMany({
-    orderBy: desc(users.createdAt),
-    limit: 10,
-  });
+  if (!creator) {
+    return {
+      user,
+      creator: null,
+      stats: null,
+      integrations: [],
+    };
+  }
+
+  const [
+    [offerCount],
+    [bookingLinkCount],
+    [upcomingBookingCount],
+    integrations,
+  ] = await Promise.all([
+    db.select({ count: count() }).from(offers).where(eq(offers.creatorId, creator.id)),
+    db
+      .select({ count: count() })
+      .from(bookingLinks)
+      .where(eq(bookingLinks.creatorId, creator.id)),
+    db
+      .select({ count: count() })
+      .from(bookings)
+      .where(eq(bookings.creatorId, creator.id)),
+    db.query.creatorIntegrations.findMany({
+      where: eq(creatorIntegrations.creatorId, creator.id),
+    }),
+  ]);
 
   return {
+    user,
+    creator,
     stats: {
-      users: userCount.count,
-      enrollments: enrollmentCount.count,
-      completions: completionCount.count,
+      offers: offerCount.count,
+      bookingLinks: bookingLinkCount.count,
+      bookings: upcomingBookingCount.count,
     },
-    recentUsers,
+    integrations,
   };
 }
 
 export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
-  const { stats, recentUsers } = loaderData;
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Dashboard</h1>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <StatCard label="Total Users" value={stats.users} />
-        <StatCard label="Enrollments" value={stats.enrollments} />
-        <StatCard label="Lessons Completed" value={stats.completions} />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="mt-2 text-sm text-gray-500">
+          Manage your booking setup, payments, and creator operations from one place.
+        </p>
       </div>
 
-      {/* Recent Users */}
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        Recent Users
-      </h2>
-      {recentUsers.length === 0 ? (
-        <p className="text-gray-400 text-sm">No users yet.</p>
-      ) : (
-        <div className="border border-gray-100 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-left text-gray-500">
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Joined</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {recentUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="px-4 py-3 text-gray-900">{user.email}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        user.role === "admin"
-                          ? "bg-brand-violet-50 text-brand-violet"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-400">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {!loaderData.creator ? (
+        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+          You have creator-level access, but no creator profile yet. Open Payments to
+          create one and connect your accounts.
         </div>
+      ) : (
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCard label="Offers" value={loaderData.stats?.offers ?? 0} />
+            <StatCard label="Booking Links" value={loaderData.stats?.bookingLinks ?? 0} />
+            <StatCard label="Bookings" value={loaderData.stats?.bookings ?? 0} />
+          </div>
+
+          <div className="rounded-xl border border-gray-100 bg-white p-5">
+            <h2 className="text-lg font-semibold text-gray-900">Connected Services</h2>
+            <div className="mt-4 space-y-3">
+              {loaderData.integrations.length === 0 ? (
+                <p className="text-sm text-gray-400">No services connected yet.</p>
+              ) : (
+                loaderData.integrations.map((integration) => (
+                  <div
+                    key={integration.id}
+                    className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{integration.type}</p>
+                      <p className="text-sm text-gray-500">
+                        Status: {integration.status}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
+                      {integration.externalAccountId || "Configured in-app"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -91,9 +113,9 @@ export default function AdminDashboard({ loaderData }: Route.ComponentProps) {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl px-6 py-5">
+    <div className="rounded-xl border border-gray-100 bg-white px-6 py-5">
       <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+      <p className="mt-1 text-3xl font-bold text-gray-900">{value}</p>
     </div>
   );
 }

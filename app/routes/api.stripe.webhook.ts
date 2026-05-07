@@ -1,10 +1,17 @@
 import type { Route } from "./+types/api.stripe.webhook";
 import Stripe from "stripe";
-import { fulfillCheckoutSession, getStripe, getStripeConfig } from "~/lib/stripe.server";
+import {
+  fulfillCheckoutSession,
+  getCreatorStripeWebhookSecret,
+} from "~/lib/stripe.server";
 
 export async function action(args: Route.ActionArgs) {
+  const url = new URL(args.request.url);
+  const creatorId = Number(url.searchParams.get("creatorId") || 0);
   const signature = args.request.headers.get("stripe-signature");
-  const webhookSecret = getStripeConfig().webhookSecret;
+  const webhookSecret = creatorId
+    ? await getCreatorStripeWebhookSecret(creatorId)
+    : null;
 
   if (!signature || !webhookSecret) {
     return new Response("Webhook not configured", { status: 400 });
@@ -14,7 +21,7 @@ export async function action(args: Route.ActionArgs) {
 
   let event: Stripe.Event;
   try {
-    event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
+    event = Stripe.webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid signature";
     return new Response(message, { status: 400 });

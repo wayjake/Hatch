@@ -1,17 +1,13 @@
 import { redirect } from "react-router";
-import { getAuthUserId, getOrCreateUser } from "~/lib/auth.server";
-import { getCreatorByUserId, getUpcomingBookingsForCreator } from "~/lib/booking.server";
+import { requireCreatorAdmin } from "~/lib/auth.server";
+import { getUpcomingBookingsForCreator } from "~/lib/booking.server";
 
 export function meta() {
   return [{ title: "Bookings — Admin — Hatch" }];
 }
 
 export async function loader(args: any) {
-  const userId = await getAuthUserId(args);
-  if (!userId) throw redirect("/");
-
-  await getOrCreateUser(args);
-  const creator = await getCreatorByUserId(userId);
+  const { creator } = await requireCreatorAdmin(args);
 
   return {
     creator,

@@ -4,12 +4,14 @@ import { getCourses } from "~/lib/courses.server";
 import { db } from "~/db";
 import { enrollments } from "~/db/schema";
 import { eq, count } from "drizzle-orm";
+import { requireAdmin } from "~/lib/auth.server";
 
 export function meta() {
-  return [{ title: "Courses — Admin — Hatch" }];
+  return [{ title: "Courses — Super Admin — Hatch" }];
 }
 
-export async function loader() {
+export async function loader(args: Route.LoaderArgs) {
+  await requireAdmin(args);
   const courses = getCourses();
 
   const coursesWithStats = await Promise.all(
@@ -106,7 +108,7 @@ export default function AdminCourses({ loaderData }: Route.ComponentProps) {
                           {lesson.title}
                         </span>
                         <Link
-                          to={`/admin/courses/${course.slug}/${mod.slug}/${lesson.slug}`}
+                          to={`/super/admin/courses/${course.slug}/${mod.slug}/${lesson.slug}`}
                           className="text-[11px] px-2 py-0.5 text-brand-violet hover:text-brand-indigo transition-colors"
                         >
                           Edit
