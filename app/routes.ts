@@ -7,11 +7,6 @@ export default [
   route("courses/:courseSlug/:moduleSlug/:lessonSlug", "routes/lesson.tsx"),
   route("teleprompter", "routes/teleprompter.tsx"),
 
-  // Creator lead pages
-  route("@/:handle", "routes/creator.$handle.tsx"),
-  route("creators", "routes/creators.tsx"),
-  route("become-a-creator", "routes/become-a-creator.tsx"),
-
   // Profile & community routes
   route("profile/edit", "routes/profile.edit.tsx"),
   route("members/:userId", "routes/member.tsx"),
@@ -30,13 +25,6 @@ export default [
   route("api/google-calendar/callback", "routes/api.google-calendar.callback.ts"),
   route("api/stripe/checkout", "routes/api.stripe.checkout.ts"),
   route("api/stripe/webhook", "routes/api.stripe.webhook.ts"),
-
-  // Studio — creator admin surface
-  layout("routes/studio.tsx", [
-    route("studio", "routes/studio.dashboard.tsx"),
-    route("studio/page", "routes/studio.page.tsx"),
-    route("studio/settings", "routes/studio.settings.tsx"),
-  ]),
 
   // Creator admin routes
   layout("routes/admin.tsx", [

@@ -8,7 +8,7 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Hatch gives creators a branded space for courses, community, and 1:1 time. Turn your expertise into a business your audience comes home to.",
+        "Hatch is a self-hosted course product for publishing markdown-based courses, community, and bookings from one codebase.",
     },
   ];
 }
@@ -39,12 +39,12 @@ function WayfindingBanner() {
   return (
     <div className="border-b border-gray-100 bg-gradient-to-r from-brand-amber-50 via-brand-coral-50 to-brand-violet-50">
       <div className="max-w-6xl mx-auto px-6 py-2.5 text-center text-xs md:text-sm text-gray-700">
-        Looking for a specific creator?{" "}
+        Looking for published content?{" "}
         <Link
-          to="/creators"
+          to="/courses"
           className="font-semibold text-gray-900 underline underline-offset-2 hover:text-brand-coral transition-colors"
         >
-          Browse creators &rarr;
+          Browse courses &rarr;
         </Link>
       </div>
     </div>
@@ -62,7 +62,7 @@ function Hero() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 backdrop-blur ring-1 ring-amber-200/70 text-amber-700 text-xs font-semibold mb-6 shadow-sm shadow-amber-500/5">
             <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-amber to-brand-coral" />
-            For creators in early access
+            Self-hosted course software
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 tracking-tight leading-[1.05]">
             Turn your expertise into a{" "}
@@ -72,17 +72,17 @@ function Hero() {
             comes back to.
           </h1>
           <p className="mt-6 text-lg text-gray-600 leading-relaxed max-w-2xl">
-            Hatch gives creators a branded space for courses, community,
-            and 1:1 time &mdash; all under your own URL, all yours. Built by
-            creators who've shipped what they teach.
+            Hatch gives you one place to publish courses, run community, and
+            manage paid calls. Markdown stays your authoring surface. The app
+            stays yours.
           </p>
           <div className="mt-8 flex items-center gap-4 flex-wrap">
-            <StartCta label="Start your Hatch" />
+            <StartCta label="Browse courses" />
             <Link
-              to="/creators"
+              to="/courses"
               className="px-6 py-3 bg-white/90 backdrop-blur text-gray-800 text-sm font-semibold rounded-xl ring-1 ring-gray-200 hover:ring-gray-300 hover:bg-white transition-colors"
             >
-              See it in action
+              View published courses
             </Link>
           </div>
         </div>
@@ -129,22 +129,22 @@ function Plan() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Step
             number="01"
-            title="Claim your space"
-            description="Pick a handle. Get a branded lead page at your own URL. Your logo, your color, your story — not ours."
+            title="Write in markdown"
+            description="Author course structure and lessons in files you can version, diff, and edit without being trapped in a CMS."
             gradient="from-brand-amber to-brand-coral"
             shadow="shadow-brand-amber/30"
           />
           <Step
             number="02"
-            title="Ship your courses"
-            description="Write in Markdown. Record with the built-in teleprompter. Publish. Your audience buys, learns, and comes back for more."
+            title="Publish revisions"
+            description="Snapshot your draft into immutable published versions so the live site stays stable while you keep editing."
             gradient="from-brand-coral to-brand-rose"
             shadow="shadow-brand-coral/30"
           />
           <Step
             number="03"
-            title="Book your time"
-            description="Connect your calendar and get paid for the 1:1s you were giving away anyway. Hatch handles checkout so you don't."
+            title="Run the business"
+            description="Courses, bookings, payments, and community stay in one deployable product instead of being split across tools."
             gradient="from-brand-violet to-brand-indigo"
             shadow="shadow-brand-violet/30"
           />
@@ -165,15 +165,13 @@ function Success() {
           </h2>
         </div>
         <p className="text-2xl md:text-3xl font-semibold text-gray-900 leading-tight tracking-tight">
-          Your audience in one place. Courses, community, and bookings
-          &mdash; all under your brand.
+          Your content and operations in one place. Courses, community, and
+          bookings without the platform overhead.
         </p>
         <p className="mt-5 text-lg text-gray-600 leading-relaxed">
-          When someone asks where to find you, you send one link. When they
-          want more, they buy a course. When they want your time, they book
-          it. When they want to build alongside other people you're helping,
-          they find each other in your community. You stop running a
-          business made of tabs.
+          You publish from markdown, promote a stable released version, and
+          keep the runtime data in the database where it belongs. The result is
+          simpler to own, simpler to deploy, and easier to evolve.
         </p>
       </div>
     </section>
@@ -198,19 +196,19 @@ function FinalCta() {
     <section className="border-t border-gray-100 bg-gradient-to-b from-white via-gray-50/80 to-white">
       <div className="max-w-3xl mx-auto px-6 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
-          Ready to stop being a tab?
+          Ready to ship from your own stack?
         </h2>
         <p className="mt-4 text-gray-600 leading-relaxed">
-          Early-bird plans start at $25/mo. Keep your courses, your
-          community, and your calendar in one branded home.
+          Use Hatch as a self-hosted foundation for courses, community, and
+          bookings without handing the core product over to a marketplace.
         </p>
         <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
-          <StartCta label="Claim my space" signedOutLabel="Start your Hatch" large />
+          <StartCta label="Browse courses" signedOutLabel="Open the app" large />
           <Link
-            to="/creators"
+            to="/courses"
             className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
           >
-            Browse creators &rarr;
+            Browse courses &rarr;
           </Link>
         </div>
       </div>
@@ -233,7 +231,7 @@ function StartCta({
 
   if (isSignedIn) {
     return (
-      <Link to="/become-a-creator" className={className}>
+      <Link to="/courses" className={className}>
         {label}
       </Link>
     );
@@ -279,8 +277,8 @@ function Footer() {
     <footer className="border-t border-gray-100 py-10">
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-sm text-gray-500">
         <span>&copy; {new Date().getFullYear()} Hatch</span>
-        <Link to="/creators" className="hover:text-gray-900 transition-colors">
-          Creators
+        <Link to="/courses" className="hover:text-gray-900 transition-colors">
+          Courses
         </Link>
       </div>
     </footer>

@@ -73,6 +73,63 @@ export function getCourse(slug: string): Course | null {
   return JSON.parse(fs.readFileSync(coursePath, "utf-8")) as Course;
 }
 
+export function hasLessonScript(
+  courseSlug: string,
+  moduleSlug: string,
+  lessonSlug: string
+): boolean {
+  const scriptPath = path.join(
+    CONTENT_DIR,
+    courseSlug,
+    "modules",
+    moduleSlug,
+    `${lessonSlug}.script.md`
+  );
+  return fs.existsSync(scriptPath);
+}
+
+export function getLessonScript(
+  courseSlug: string,
+  moduleSlug: string,
+  lessonSlug: string
+): { title: string; raw: string } | null {
+  const scriptPath = path.join(
+    CONTENT_DIR,
+    courseSlug,
+    "modules",
+    moduleSlug,
+    `${lessonSlug}.script.md`
+  );
+  if (!fs.existsSync(scriptPath)) return null;
+
+  const raw = fs.readFileSync(scriptPath, "utf-8");
+
+  const course = getCourse(courseSlug);
+  const module = course?.modules.find((m) => m.slug === moduleSlug);
+  const lesson = module?.lessons.find((l) => l.slug === lessonSlug);
+
+  return {
+    title: lesson?.title || lessonSlug,
+    raw,
+  };
+}
+
+export function getCourseScriptTree(courseSlug: string): Course | null {
+  const course = getCourse(courseSlug);
+  if (!course) return null;
+
+  const modules = course.modules
+    .map((module) => ({
+      ...module,
+      lessons: module.lessons.filter((lesson) =>
+        hasLessonScript(courseSlug, module.slug, lesson.slug)
+      ),
+    }))
+    .filter((module) => module.lessons.length > 0);
+
+  return { ...course, modules };
+}
+
 export function getLessonContent(
   courseSlug: string,
   moduleSlug: string,

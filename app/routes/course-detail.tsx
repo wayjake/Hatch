@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/course-detail";
-import { getCourse } from "~/lib/courses.server";
+import { getRuntimeCourse } from "~/lib/course-publishing.server";
 import { getAuthUserId } from "~/lib/auth.server";
 import { db } from "~/db";
 import { enrollments } from "~/db/schema";
@@ -31,7 +31,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader(args: Route.LoaderArgs) {
-  const course = getCourse(args.params.courseSlug);
+  const course = await getRuntimeCourse(args.params.courseSlug);
   if (!course) {
     throw new Response("Course not found", { status: 404 });
   }

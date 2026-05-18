@@ -24,13 +24,13 @@ export default function AdminLayout({ loaderData }: Route.ComponentProps) {
         <div className="px-4 py-6">
           <div className="px-3 mb-6">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-              Creator Admin
+              Admin
             </div>
             <div className="mt-1 text-sm font-semibold text-gray-900 truncate">
               {loaderData.creator?.displayName || loaderData.user.email}
             </div>
             <div className="mt-1 text-xs text-gray-500">
-              {loaderData.creator ? "@/" + loaderData.creator.slug : "No creator profile yet"}
+              {loaderData.creator ? "Single-owner workspace" : "Owner profile pending"}
             </div>
           </div>
           <nav className="space-y-1">

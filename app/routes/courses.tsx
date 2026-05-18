@@ -1,5 +1,5 @@
 import type { Route } from "./+types/courses";
-import { getCourses } from "~/lib/courses.server";
+import { listRuntimeCourses } from "~/lib/course-publishing.server";
 import { CourseCard } from "~/components/course-card";
 
 export function meta() {
@@ -9,8 +9,8 @@ export function meta() {
   ];
 }
 
-export function loader() {
-  const courses = getCourses();
+export async function loader() {
+  const courses = await listRuntimeCourses();
   return { courses };
 }
 

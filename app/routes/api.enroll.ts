@@ -2,7 +2,7 @@ import type { Route } from "./+types/api.enroll";
 import { getAuth } from "@clerk/react-router/server";
 import { db } from "~/db";
 import { enrollments } from "~/db/schema";
-import { getCourse } from "~/lib/courses.server";
+import { getRuntimeCourse } from "~/lib/course-publishing.server";
 
 export async function action(args: Route.ActionArgs) {
   const auth = await getAuth(args);
@@ -17,7 +17,7 @@ export async function action(args: Route.ActionArgs) {
     return new Response("Missing courseSlug", { status: 400 });
   }
 
-  const course = getCourse(courseSlug);
+  const course = await getRuntimeCourse(courseSlug);
   if (!course) {
     return new Response("Course not found", { status: 404 });
   }

@@ -85,10 +85,7 @@ export default function BookingPage({
       {creator && (
         <header className="border-b border-gray-100 bg-white">
           <div className="max-w-3xl mx-auto px-6 h-16 flex items-center">
-            <Link
-              to={`/@/${creator.slug}`}
-              className="flex items-center gap-3 group"
-            >
+            <Link to="/" className="flex items-center gap-3 group">
               {creator.logoUrl ? (
                 <img
                   src={creator.logoUrl}
@@ -107,7 +104,7 @@ export default function BookingPage({
                 <span className="text-base font-semibold text-gray-900 group-hover:underline">
                   {creator.displayName}
                 </span>
-                <span className="text-xs text-gray-500">← Back to profile</span>
+                <span className="text-xs text-gray-500">← Back to home</span>
               </div>
             </Link>
           </div>

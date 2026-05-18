@@ -14,6 +14,52 @@ export const users = sqliteTable("users", {
     .$defaultFn(() => new Date()),
 });
 
+export const courses = sqliteTable(
+  "courses",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    status: text("status", { enum: ["draft", "published", "archived"] })
+      .notNull()
+      .default("draft"),
+    publishedRevisionId: integer("published_revision_id"),
+    currentDraftHash: text("current_draft_hash"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [uniqueIndex("courses_slug_unique").on(table.slug)]
+);
+
+export const courseRevisions = sqliteTable(
+  "course_revisions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => courses.id),
+    version: integer("version").notNull(),
+    manifestJson: text("manifest_json").notNull(),
+    sourceHash: text("source_hash").notNull(),
+    notes: text("notes").notNull().default(""),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    publishedAt: integer("published_at", { mode: "timestamp" }),
+  },
+  (table) => [
+    uniqueIndex("course_revisions_course_version_unique").on(
+      table.courseId,
+      table.version
+    ),
+    index("course_revisions_course_idx").on(table.courseId),
+  ]
+);
+
 export const enrollments = sqliteTable(
   "enrollments",
   {

@@ -1,0 +1,22 @@
+{
+  "name": "course-platform-obs-control",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "obs-recording": "./record.ts"
+  },
+  "scripts": {
+    "record": "bun run ./record.ts",
+    "start": "bun run ./record.ts start",
+    "pause": "bun run ./record.ts pause",
+    "resume": "bun run ./record.ts resume",
+    "toggle": "bun run ./record.ts toggle",
+    "status": "bun run ./record.ts status"
+  },
+  "dependencies": {
+    "obs-websocket-js": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14"
+  }
+}

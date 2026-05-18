@@ -103,7 +103,7 @@ export default function AccountCalls({ loaderData }: Route.ComponentProps) {
         </p>
         {!loaderData.creator && (
           <p className="mt-3 text-sm text-gray-400">
-            No creator has been configured yet.
+            No site owner profile has been configured yet.
           </p>
         )}
       </div>

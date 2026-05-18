@@ -1,13 +1,30 @@
-import { Link } from "react-router";
+import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/admin.courses";
 import { getCourses } from "~/lib/courses.server";
 import { db } from "~/db";
 import { enrollments } from "~/db/schema";
 import { eq, count } from "drizzle-orm";
 import { requireAdmin } from "~/lib/auth.server";
+import {
+  getCoursePublishingStatus,
+  publishCourseRevision,
+} from "~/lib/course-publishing.server";
 
 export function meta() {
   return [{ title: "Courses — Super Admin — Hatch" }];
+}
+
+export async function action(args: Route.ActionArgs) {
+  await requireAdmin(args);
+  const formData = await args.request.formData();
+  const intent = String(formData.get("intent") || "");
+  const courseSlug = String(formData.get("courseSlug") || "");
+
+  if (intent === "publish" && courseSlug) {
+    await publishCourseRevision(courseSlug);
+  }
+
+  return redirect("/super/admin/courses");
 }
 
 export async function loader(args: Route.LoaderArgs) {
@@ -30,6 +47,7 @@ export async function loader(args: Route.LoaderArgs) {
         ...course,
         enrollmentCount: enrollmentCount.count,
         lessonCount,
+        publishing: await getCoursePublishingStatus(course.slug),
       };
     })
   );
@@ -57,6 +75,14 @@ export default function AdminCourses({ loaderData }: Route.ComponentProps) {
                   {course.modules.length} modules &middot; {course.lessonCount}{" "}
                   lessons &middot; {course.enrollmentCount} enrolled
                 </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {course.publishing.publishedVersion
+                    ? `Published v${course.publishing.publishedVersion}`
+                    : "Not published yet"}
+                  {course.publishing.hasUnpublishedChanges
+                    ? " • Draft changes pending"
+                    : ""}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700">
@@ -64,6 +90,16 @@ export default function AdminCourses({ loaderData }: Route.ComponentProps) {
                     ? "Free"
                     : `$${course.price.toFixed(2)}`}
                 </span>
+                <Form method="post">
+                  <input type="hidden" name="intent" value="publish" />
+                  <input type="hidden" name="courseSlug" value={course.slug} />
+                  <button
+                    type="submit"
+                    className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    {course.publishing.publishedVersion ? "Republish" : "Publish"}
+                  </button>
+                </Form>
                 <Link
                   to={`/courses/${course.slug}`}
                   className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"

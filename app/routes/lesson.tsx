@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { Link, useFetcher } from "react-router";
 import type { Route } from "./+types/lesson";
-import { getCourse, getLessonContent } from "~/lib/courses.server";
+import {
+  getRuntimeCourse,
+  getRuntimeLessonContent,
+} from "~/lib/course-publishing.server";
 import { checkModuleAccess, getOrCreateUser } from "~/lib/auth.server";
 import { db } from "~/db";
-import { lessonCompletions, comments, commentVotes, profiles } from "~/db/schema";
+import { lessonCompletions, comments, commentVotes, profiles, users } from "~/db/schema";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/react-router/server";
-import { SignUpButton } from "@clerk/react-router";
+import { SignInButton, SignUpButton } from "@clerk/react-router";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data?.lesson) {
@@ -39,7 +42,7 @@ export function meta({ data }: Route.MetaArgs) {
 
 export async function loader(args: Route.LoaderArgs) {
   const { params } = args;
-  const course = getCourse(params.courseSlug);
+  const course = await getRuntimeCourse(params.courseSlug);
   if (!course) throw new Response("Course not found", { status: 404 });
 
   // Find the module this lesson belongs to
@@ -52,6 +55,16 @@ export async function loader(args: Route.LoaderArgs) {
     params.courseSlug,
     currentMod.access
   );
+
+  // Editor-only affordances (teleprompter, etc.) — visible to creators/admins
+  const auth = await getAuth(args);
+  let canEdit = false;
+  if (auth.userId) {
+    const editor = await db.query.users.findFirst({
+      where: eq(users.id, auth.userId),
+    });
+    canEdit = editor?.role === "creator" || editor?.role === "admin";
+  }
 
   // Build flat list for prev/next (always needed for sidebar)
   const allLessons: {
@@ -122,11 +135,12 @@ export async function loader(args: Route.LoaderArgs) {
         }[];
       }[],
       currentUserId: null as string | null,
+      canEdit,
     };
   }
 
   const currentUser = await getOrCreateUser(args);
-  const lesson = getLessonContent(
+  const lesson = await getRuntimeLessonContent(
     params.courseSlug,
     params.moduleSlug,
     params.lessonSlug,
@@ -228,6 +242,7 @@ export async function loader(args: Route.LoaderArgs) {
     completedLessons,
     questions,
     currentUserId: access.userId || null,
+    canEdit,
   };
 }
 
@@ -330,6 +345,8 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
     currentLessonIndex,
     gated,
     completedLessons,
+    currentUserId,
+    canEdit,
   } = loaderData;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -401,18 +418,20 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
           >
             &larr; {course.title}
           </Link>
-          <div className="mt-2">
-            <Link
-              to={`/teleprompter?course=${course.slug}&module=${currentModule}&lesson=${currentLesson}`}
-              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-coral transition-colors"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 7l-7 5 7 5V7z" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-              </svg>
-              Open in Teleprompter
-            </Link>
-          </div>
+          {canEdit && (
+            <div className="mt-2">
+              <Link
+                to={`/teleprompter?course=${course.slug}&module=${currentModule}&lesson=${currentLesson}`}
+                className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-brand-coral transition-colors"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 7l-7 5 7 5V7z" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                </svg>
+                Open in Teleprompter
+              </Link>
+            </div>
+          )}
           <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
             <span>
               {completedCount} of {totalLessons} completed
@@ -569,7 +588,7 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
             </h1>
             <div className="mt-2 flex items-center gap-4 text-sm text-gray-400">
               <span>{lesson.duration}</span>
-              {!gated && (
+              {!gated && currentUserId && (
                 <fetcher.Form method="post">
                   <input
                     type="hidden"
@@ -587,6 +606,16 @@ export default function Lesson({ loaderData }: Route.ComponentProps) {
                     {isCurrentCompleted ? "Completed" : "Mark Complete"}
                   </button>
                 </fetcher.Form>
+              )}
+              {!gated && !currentUserId && (
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="font-medium text-brand-coral hover:text-brand-rose transition-colors"
+                  >
+                    Sign in to track progress
+                  </button>
+                </SignInButton>
               )}
             </div>
           </div>

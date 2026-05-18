@@ -117,7 +117,7 @@ export async function requireAdmin(args: LoaderFunctionArgs) {
 
 export async function requireCreatorAdmin(args: LoaderFunctionArgs) {
   let user = await requireSignedInUser(args);
-  const creator = await db.query.creators.findFirst({
+  let creator = await db.query.creators.findFirst({
     where: eq(creators.userId, user.id),
   });
 
@@ -126,6 +126,13 @@ export async function requireCreatorAdmin(args: LoaderFunctionArgs) {
     if (promotedUser) {
       user = promotedUser;
     }
+  }
+
+  if (!creator && user.role === "admin") {
+    creator =
+      (await db.query.creators.findFirst()) ??
+      (await createSiteOwnerCreator(user.id)) ??
+      undefined;
   }
 
   if (user.role !== "creator" && user.role !== "admin") {
@@ -151,7 +158,7 @@ export async function requireCreator(args: LoaderFunctionArgs) {
   const creator = await db.query.creators.findFirst({
     where: eq(creators.userId, user.id),
   });
-  if (!creator) throw redirect("/become-a-creator");
+  if (!creator) throw redirect("/admin");
   if (user.role === "customer") {
     const promotedUser = await promoteUserToCreator(user.id);
     if (promotedUser) {
@@ -175,4 +182,35 @@ export async function promoteUserToCreator(userId: string) {
     .where(eq(users.id, userId));
 
   return { ...user, role: "creator" as const };
+}
+
+async function createSiteOwnerCreator(userId: string) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  if (!user) return null;
+
+  const emailHandle = user.email.split("@")[0]?.trim().toLowerCase() || "site-owner";
+  const slug = emailHandle.replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-") || "site-owner";
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || "Site Owner";
+
+  const [creator] = await db
+    .insert(creators)
+    .values({
+      userId: user.id,
+      slug,
+      displayName,
+      tagline: "Site owner",
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  return (
+    creator ||
+    (await db.query.creators.findFirst({
+      where: eq(creators.userId, user.id),
+    }))
+  );
 }
